@@ -1,0 +1,23 @@
+// Skills list for the typeahead in SkillTagInput
+export const COMMON_SKILLS = [
+  'JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'Swift', 'Kotlin',
+  'Ruby', 'PHP', 'Scala', 'Dart', 'Elixir', 'MATLAB', 'R',
+  'React', 'Vue.js', 'Angular', 'Svelte', 'Next.js', 'Nuxt.js', 'Gatsby', 'Remix',
+  'HTML', 'CSS', 'Sass', 'TailwindCSS', 'Bootstrap', 'Material UI',
+  'Redux', 'MobX', 'Zustand', 'Recoil',
+  'Webpack', 'Vite', 'Babel',
+  'Jest', 'Cypress', 'Playwright',
+  'Node.js', 'Express', 'Fastify', 'NestJS',
+  'Django', 'Flask', 'FastAPI', 'Spring Boot', 'Rails', 'Laravel', 'ASP.NET',
+  'MongoDB', 'PostgreSQL', 'MySQL', 'Redis', 'Elasticsearch', 'DynamoDB', 'SQLite',
+  'Prisma', 'Sequelize', 'TypeORM', 'Mongoose',
+  'AWS', 'Azure', 'GCP', 'Docker', 'Kubernetes', 'Terraform', 'Ansible',
+  'Jenkins', 'GitHub Actions', 'CircleCI', 'Nginx',
+  'React Native', 'Flutter', 'Expo', 'Android', 'iOS',
+  'Machine Learning', 'Deep Learning', 'TensorFlow', 'PyTorch', 'scikit-learn',
+  'pandas', 'NumPy', 'Jupyter', 'NLP', 'Computer Vision',
+  'GraphQL', 'REST API', 'gRPC', 'WebSocket',
+  'Git', 'GitHub', 'GitLab', 'Jira', 'Agile', 'Scrum',
+  'CI/CD', 'DevOps', 'Microservices', 'System Design',
+  'Figma', 'UI/UX', 'Blockchain', 'Solidity', 'Web3',
+];
