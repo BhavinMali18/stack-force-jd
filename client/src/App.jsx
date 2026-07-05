@@ -12,6 +12,7 @@ import RoleEdit from './pages/RoleEdit.jsx';
 import Analytics from './pages/Analytics.jsx';
 import CandidateDetail from './pages/CandidateDetail.jsx';
 import Upload from './pages/Upload.jsx';
+import EmailAccounts from './pages/EmailAccounts.jsx';
 
 // Guard — redirects to /login if not authenticated
 function PrivateRoute({ children }) {
@@ -48,6 +49,7 @@ export default function App() {
 
       {/* Protected Routes wrapped in new Sidebar Layout */}
       <Route path="/dashboard" element={<PrivateRoute><AppLayout title="Projects (0)"><Dashboard /></AppLayout></PrivateRoute>} />
+      <Route path="/email" element={<PrivateRoute><AppLayout title="Email Accounts"><EmailAccounts /></AppLayout></PrivateRoute>} />
       <Route path="/roles/new" element={<PrivateRoute><AppLayout title="Create Project"><RoleCreate /></AppLayout></PrivateRoute>} />
       <Route path="/roles/:id" element={<PrivateRoute><AppLayout title="Project Details"><RoleDetail /></AppLayout></PrivateRoute>} />
       <Route path="/roles/:id/edit" element={<PrivateRoute><AppLayout title="Edit Project"><RoleEdit /></AppLayout></PrivateRoute>} />

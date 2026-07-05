@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { rolesAPI } from '../api/index.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { Briefcase, Zap, Bell, Search, MapPin, Users, UploadCloud, Trash2, ArrowRight } from 'lucide-react';
 
 const EXP_COLORS = { Fresher: 'badge-blue', Junior: 'badge-green', Mid: 'badge-amber', Senior: 'badge-purple', Lead: 'badge-red', Any: 'badge-gray' };
 
@@ -33,28 +34,30 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="main-header">
+      <div className="main-header" style={{ padding: '0 2.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <h1>Projects</h1>
-          <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>({roles.length})</span>
+          <h1 style={{ fontSize: '1.25rem' }}>Projects</h1>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent)', fontSize: '0.85rem', fontWeight: 600, background: 'rgba(37,99,235,0.1)', padding: '0.3rem 0.6rem', borderRadius: 'var(--radius-full)' }}>
-            <span>⚡</span> 50 remaining
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#4F46E5', fontSize: '0.85rem', fontWeight: 600, background: '#EEF2FF', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-full)' }}>
+            <Zap size={14} fill="currentColor" /> 50 remaining
           </div>
-          <button className="btn btn-ghost btn-icon" style={{ fontSize: '1.1rem', padding: '0.4rem', color: 'var(--text-muted)' }}>
-            🔔
+          <button className="btn btn-ghost btn-icon" style={{ padding: '0.4rem', color: '#9CA3AF' }}>
+            <Bell size={20} />
           </button>
         </div>
       </div>
 
-      <div className="main-body">
+      <div className="main-body" style={{ padding: '2rem 2.5rem' }}>
         <div className="container" style={{ padding: 0 }}>
           
           <div className="dashboard-search-bar">
-            <input type="text" className="form-input" placeholder="Search" style={{ flex: 1, padding: '0.875rem 1.25rem' }} />
-            <Link to="/roles/new" className="btn btn-primary" style={{ padding: '0.875rem 1.5rem', background: '#5C67ED', color: 'white', border: 'none' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Search size={18} color="#9CA3AF" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <input type="text" className="form-input" placeholder="Search" style={{ width: '100%', padding: '0.875rem 1.25rem 0.875rem 2.75rem' }} />
+            </div>
+            <Link to="/roles/new" className="btn btn-primary" style={{ padding: '0.875rem 1.5rem', background: '#4F46E5', color: 'white', border: 'none' }}>
               + Create new Project
             </Link>
           </div>
@@ -70,10 +73,12 @@ export default function Dashboard() {
             </div>
           ) : roles.length === 0 ? (
             <div className="empty-state" style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '5rem 2rem' }}>
-              <span className="empty-state-icon" style={{ fontSize: '3.5rem', opacity: 0.3, filter: 'grayscale(1)', marginBottom: '1rem' }}>💼</span>
+              <div style={{ marginBottom: '1rem' }}>
+                <Briefcase size={56} strokeWidth={1} color="#D1D5DB" />
+              </div>
               <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '0.5rem' }}>No projects yet</p>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Create your first project to start managing talent, campaigns, and hiring progress.</p>
-              <Link to="/roles/new" className="btn btn-primary" style={{ background: '#5C67ED', border: 'none' }}>+ Create new Project</Link>
+              <Link to="/roles/new" className="btn btn-primary" style={{ background: '#4F46E5', border: 'none' }}>+ Create new Project</Link>
             </div>
           ) : (
             <div className="roles-grid">
@@ -87,7 +92,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      📍 {role.location}  ·  👥 {role.candidateCount || 0} candidates
+                      <MapPin size={12} /> {role.location}  ·  <Users size={12} /> {role.candidateCount || 0} candidates
                     </p>
                   </div>
 
@@ -116,23 +121,23 @@ export default function Dashboard() {
                     <Link
                       to={`/roles/${role._id}`}
                       className="btn btn-primary btn-sm"
-                      style={{ flex: 1, justifyContent: 'center', background: '#5C67ED' }}
+                      style={{ flex: 1, justifyContent: 'center', background: '#4F46E5', gap: '0.4rem' }}
                     >
-                      Manage
+                      Manage <ArrowRight size={14} />
                     </Link>
                     <Link
                       to={`/roles/${role._id}/upload`}
                       className="btn btn-secondary btn-sm"
                       title="Upload resumes"
                     >
-                      ⬆
+                      <UploadCloud size={16} />
                     </Link>
                     <button
                       className="btn btn-danger btn-sm btn-icon"
                       onClick={() => handleDelete(role._id)}
                       disabled={deleting === role._id}
                     >
-                      🗑
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
