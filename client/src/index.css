@@ -684,6 +684,7 @@ select.form-input { cursor: pointer; }
   flex-direction: column;
   min-width: 0;
   height: 100%;
+  overflow: hidden;
 }
 
 .main-header {

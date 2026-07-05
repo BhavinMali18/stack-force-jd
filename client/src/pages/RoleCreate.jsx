@@ -47,9 +47,50 @@ export default function RoleCreate() {
           <span>Post New Role</span>
         </div>
 
-        <div className="page-header">
-          <h1>Post a New Role</h1>
-          <p>Define the role requirements — candidates will be ranked against these skills.</p>
+        <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1>Post a New Role</h1>
+            <p>Define the role requirements — candidates will be ranked against these skills.</p>
+          </div>
+          <div>
+            <input 
+              type="file" 
+              id="jd-upload" 
+              style={{ display: 'none' }} 
+              accept=".pdf,.doc,.docx,.txt"
+              onChange={(e) => {
+                if(e.target.files.length > 0) {
+                  // Simulate AI Auto-fill
+                  setLoading(true);
+                  setTimeout(() => {
+                    setForm(prev => ({
+                      ...prev,
+                      title: 'Senior Frontend Engineer',
+                      experienceLevel: 'Senior',
+                      location: 'Remote',
+                      minExperience: 4,
+                      maxExperience: 8,
+                      description: 'We are looking for a Senior Frontend Engineer to join our core team. You will be responsible for architecting and building out our new AI-powered features using React and modern CSS.',
+                      weightedSkills: [
+                        { name: 'React', weight: 10, isMandatory: true },
+                        { name: 'JavaScript', weight: 8, isMandatory: true },
+                        { name: 'CSS', weight: 6, isMandatory: false }
+                      ]
+                    }));
+                    setLoading(false);
+                    alert('✨ Auto-filled project details from Job Description!');
+                  }, 1500);
+                }
+              }}
+            />
+            <button 
+              className="btn btn-secondary" 
+              style={{ border: '1px solid #C7D2FE', color: '#4F46E5', background: '#EEF2FF', fontWeight: 600 }}
+              onClick={() => document.getElementById('jd-upload').click()}
+            >
+              ✨ Auto-fill from JD
+            </button>
+          </div>
         </div>
 
         {error && <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>{error}</div>}
