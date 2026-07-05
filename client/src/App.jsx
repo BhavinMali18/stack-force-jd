@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext.jsx';
 import Navbar from './components/Navbar.jsx';
+import AppLayout from './components/AppLayout.jsx';
 import Landing from './pages/Landing.jsx';
 import Auth from './pages/Auth.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -39,26 +40,23 @@ function PublicOnlyRoute({ children }) {
 
 export default function App() {
   return (
-    <>
-      <Navbar />
-      <Routes>
-        {/* Public */}
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<PublicOnlyRoute><Auth /></PublicOnlyRoute>} />
-        <Route path="/register" element={<PublicOnlyRoute><Auth /></PublicOnlyRoute>} />
+    <Routes>
+      {/* Public Routes with old Navbar */}
+      <Route path="/" element={<><Navbar /><Landing /></>} />
+      <Route path="/login" element={<PublicOnlyRoute><><Navbar /><Auth /></></PublicOnlyRoute>} />
+      <Route path="/register" element={<PublicOnlyRoute><><Navbar /><Auth /></></PublicOnlyRoute>} />
 
-        {/* Protected */}
-        <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-        <Route path="/roles/new" element={<PrivateRoute><RoleCreate /></PrivateRoute>} />
-        <Route path="/roles/:id" element={<PrivateRoute><RoleDetail /></PrivateRoute>} />
-        <Route path="/roles/:id/edit" element={<PrivateRoute><RoleEdit /></PrivateRoute>} />
-        <Route path="/roles/:id/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
-        <Route path="/roles/:id/upload" element={<PrivateRoute><Upload /></PrivateRoute>} />
-        <Route path="/roles/:id/candidates/:cid" element={<PrivateRoute><CandidateDetail /></PrivateRoute>} />
+      {/* Protected Routes wrapped in new Sidebar Layout */}
+      <Route path="/dashboard" element={<PrivateRoute><AppLayout title="Projects (0)"><Dashboard /></AppLayout></PrivateRoute>} />
+      <Route path="/roles/new" element={<PrivateRoute><AppLayout title="Create Project"><RoleCreate /></AppLayout></PrivateRoute>} />
+      <Route path="/roles/:id" element={<PrivateRoute><AppLayout title="Project Details"><RoleDetail /></AppLayout></PrivateRoute>} />
+      <Route path="/roles/:id/edit" element={<PrivateRoute><AppLayout title="Edit Project"><RoleEdit /></AppLayout></PrivateRoute>} />
+      <Route path="/roles/:id/analytics" element={<PrivateRoute><AppLayout title="Project Analytics"><Analytics /></AppLayout></PrivateRoute>} />
+      <Route path="/roles/:id/upload" element={<PrivateRoute><AppLayout title="Upload Resumes"><Upload /></AppLayout></PrivateRoute>} />
+      <Route path="/roles/:id/candidates/:cid" element={<PrivateRoute><AppLayout title="Candidate Profile"><CandidateDetail /></AppLayout></PrivateRoute>} />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </>
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
