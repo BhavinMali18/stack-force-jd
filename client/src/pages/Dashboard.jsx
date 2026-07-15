@@ -1,150 +1,98 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { rolesAPI } from '../api/index.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Briefcase, Zap, Bell, Search, MapPin, Users, UploadCloud, Trash2, ArrowRight } from 'lucide-react';
-
-const EXP_COLORS = { Fresher: 'badge-blue', Junior: 'badge-green', Mid: 'badge-amber', Senior: 'badge-purple', Lead: 'badge-red', Any: 'badge-gray' };
+import { Briefcase, Search, Bell } from 'lucide-react';
 
 export default function Dashboard() {
   const { company } = useAuth();
-  const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState(null);
-
-  useEffect(() => {
-    rolesAPI.list()
-      .then((res) => setRoles(res.data.roles))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
-
-  const handleDelete = async (id) => {
-    if (!confirm('Delete this project and all its candidates?')) return;
-    setDeleting(id);
-    try {
-      await rolesAPI.delete(id);
-      setRoles((prev) => prev.filter((r) => r._id !== id));
-    } catch (err) {
-      alert(err.response?.data?.message || 'Delete failed');
-    } finally {
-      setDeleting(null);
-    }
-  };
 
   return (
     <>
-      <div className="main-header" style={{ padding: '0 2.5rem' }}>
+      <div className="main-header" style={{ padding: '0 2.5rem', borderBottom: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <h1 style={{ fontSize: '1.25rem' }}>Projects</h1>
+          {/* Header left empty to match design or keep breadcrumb if needed */}
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#4F46E5', fontSize: '0.85rem', fontWeight: 600, background: '#EEF2FF', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-full)' }}>
-            <Zap size={14} fill="currentColor" /> 50 remaining
-          </div>
           <button className="btn btn-ghost btn-icon" style={{ padding: '0.4rem', color: '#9CA3AF' }}>
             <Bell size={20} />
           </button>
         </div>
       </div>
 
-      <div className="main-body" style={{ padding: '2rem 2.5rem' }}>
-        <div className="container" style={{ padding: 0 }}>
-          
-          <div className="dashboard-search-bar">
-            <div style={{ position: 'relative', flex: 1 }}>
-              <Search size={18} color="#9CA3AF" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-              <input type="text" className="form-input" placeholder="Search" style={{ width: '100%', padding: '0.875rem 1.25rem 0.875rem 2.75rem' }} />
-            </div>
-            <Link to="/roles/new" className="btn btn-primary" style={{ padding: '0.875rem 1.5rem', background: '#4F46E5', color: 'white', border: 'none' }}>
-              + Create new Project
-            </Link>
+      <div className="main-body" style={{ padding: '2rem 2.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        
+        {/* Welcome Section */}
+        <div style={{ textAlign: 'center', maxWidth: 650, margin: '0 auto 4rem' }}>
+          <div style={{
+            width: 72, height: 72, borderRadius: '50%', backgroundColor: '#F3F4F6',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 1.5rem', fontSize: '2rem'
+          }}>
+            👋
           </div>
-
-          {loading ? (
-            <div className="roles-grid">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="card" style={{ padding: '1.5rem', gap: '0.75rem', display: 'flex', flexDirection: 'column' }}>
-                  <div className="skeleton" style={{ height: 20, width: '60%' }} />
-                  <div className="skeleton" style={{ height: 14, width: '40%' }} />
-                </div>
-              ))}
-            </div>
-          ) : roles.length === 0 ? (
-            <div className="empty-state" style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '5rem 2rem' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <Briefcase size={56} strokeWidth={1} color="#D1D5DB" />
-              </div>
-              <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '0.5rem' }}>No projects yet</p>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Create your first project to start managing talent, campaigns, and hiring progress.</p>
-              <Link to="/roles/new" className="btn btn-primary" style={{ background: '#4F46E5', border: 'none' }}>+ Create new Project</Link>
-            </div>
-          ) : (
-            <div className="roles-grid">
-              {roles.map((role) => (
-                <div key={role._id} className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', border: '1px solid var(--border)' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.4rem' }}>
-                      <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>{role.title}</h3>
-                      <span className={`badge ${EXP_COLORS[role.experienceLevel] || 'badge-gray'}`}>
-                        {role.experienceLevel}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <MapPin size={12} /> {role.location}  ·  <Users size={12} /> {role.candidateCount || 0} candidates
-                    </p>
-                  </div>
-
-                  {role.requiredSkills.length > 0 && (
-                    <div className="skill-pills">
-                      {role.requiredSkills.slice(0, 5).map((s) => (
-                        <span key={s} className="skill-pill">{s}</span>
-                      ))}
-                      {role.requiredSkills.length > 5 && (
-                        <span className="badge badge-gray">+{role.requiredSkills.length - 5}</span>
-                      )}
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{
-                      width: 8, height: 8, borderRadius: '50%',
-                      background: role.isActive ? 'var(--success)' : 'var(--text-muted)',
-                    }} />
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      {role.isActive ? 'Active' : 'Closed'}
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>
-                    <Link
-                      to={`/roles/${role._id}`}
-                      className="btn btn-primary btn-sm"
-                      style={{ flex: 1, justifyContent: 'center', background: '#4F46E5', gap: '0.4rem' }}
-                    >
-                      Manage <ArrowRight size={14} />
-                    </Link>
-                    <Link
-                      to={`/roles/${role._id}/upload`}
-                      className="btn btn-secondary btn-sm"
-                      title="Upload resumes"
-                    >
-                      <UploadCloud size={16} />
-                    </Link>
-                    <button
-                      className="btn btn-danger btn-sm btn-icon"
-                      onClick={() => handleDelete(role._id)}
-                      disabled={deleting === role._id}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, color: '#111827', marginBottom: '1rem' }}>
+            Welcome, {company?.name || 'Bhavin Mali'}!
+          </h1>
+          <p style={{ fontSize: '1rem', color: '#6B7280', lineHeight: 1.6 }}>
+            Start by creating a project to manage your talent, or explore your entire candidate database with advanced filters to find the best matches.
+          </p>
         </div>
+
+        {/* Action Cards */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+          gap: '1.5rem', width: '100%', maxWidth: 900
+        }}>
+          {/* Create Project Card */}
+          <Link to="/projects" style={{ textDecoration: 'none' }}>
+            <div className="card" style={{
+              padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem',
+              height: '100%', border: '1px solid #E5E7EB', borderRadius: '16px',
+              transition: 'all 0.2s', cursor: 'pointer', background: '#F9FAFB'
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#4F46E5'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827', marginBottom: '0.75rem' }}>
+                  Create Project
+                </h3>
+                <p style={{ fontSize: '0.9rem', color: '#6B7280', lineHeight: 1.5 }}>
+                  Set up a job role you want to hire for. Projects help you manage talent, campaigns, and hiring progress in one place.
+                </p>
+              </div>
+              <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', opacity: 0.8 }}>
+                {/* Simulated illustration placeholder to match design */}
+                <div style={{ width: 120, height: 80, background: 'linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%)', borderRadius: '12px', transform: 'rotate(-5deg)' }}></div>
+              </div>
+            </div>
+          </Link>
+
+          {/* Explore Talent Pool Card */}
+          <Link to="/explore" style={{ textDecoration: 'none' }}>
+            <div className="card" style={{
+              padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem',
+              height: '100%', border: '1px solid #E5E7EB', borderRadius: '16px',
+              transition: 'all 0.2s', cursor: 'pointer', background: '#F9FAFB'
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#4F46E5'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#E5E7EB'}>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827', marginBottom: '0.75rem' }}>
+                  Explore Your Talent Pool
+                </h3>
+                <p style={{ fontSize: '0.9rem', color: '#6B7280', lineHeight: 1.5 }}>
+                  Browse your candidate database with advanced filters. Search by skills, experience, location, and more.
+                </p>
+              </div>
+              <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'flex-end', opacity: 0.8 }}>
+                {/* Simulated illustration placeholder to match design */}
+                <div style={{ width: 120, height: 80, background: 'linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%)', borderRadius: '12px', transform: 'rotate(5deg)' }}></div>
+              </div>
+            </div>
+          </Link>
+        </div>
+
       </div>
     </>
   );

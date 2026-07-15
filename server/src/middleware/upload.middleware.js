@@ -20,12 +20,12 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowed = ['.pdf', '.docx', '.doc'];
+  const allowed = ['.pdf', '.docx', '.doc', '.zip', '.txt'];
   const ext = path.extname(file.originalname).toLowerCase();
   if (allowed.includes(ext)) {
     cb(null, true);
   } else {
-    cb(new Error(`Invalid file type: ${ext}. Only PDF and DOCX are allowed.`), false);
+    cb(new Error(`Invalid file type: ${ext}. Only PDF, DOCX, TXT, and ZIP are allowed.`), false);
   }
 };
 
@@ -33,8 +33,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10 MB per file
-    files: 100,                  // max 100 files per batch
+    fileSize: 500 * 1024 * 1024, // 500 MB per file to support massive ZIPs
   },
 });
 

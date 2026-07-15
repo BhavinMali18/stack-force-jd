@@ -21,6 +21,10 @@ const extractText = async (filePath) => {
     return result.value;
   }
 
+  if (ext === '.txt') {
+    return buffer.toString('utf-8');
+  }
+
   throw new Error(`Unsupported file type: ${ext}`);
 };
 
@@ -133,4 +137,4 @@ const parseResume = async (filePath) => {
   return { text, name, email, phone, extractedSkills, cgpa, yearsOfExperience, college };
 };
 
-module.exports = { parseResume, extractSkillsFromText };
+module.exports = { parseResume, extractSkillsFromText, extractText };

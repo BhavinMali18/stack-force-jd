@@ -66,7 +66,7 @@ ${resumeText.substring(0, 30000) /* limit text length to avoid token limits */}
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.5-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -90,4 +90,62 @@ ${resumeText.substring(0, 30000) /* limit text length to avoid token limits */}
   }
 };
 
-module.exports = { analyzeResumeWithAI };
+/**
+ * Parse a Job Description using Gemini to extract structured fields.
+ */
+const parseJDWithAI = async (jdText) => {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is not set');
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+  const prompt = `
+You are an expert technical recruiter analyzing a Job Description document.
+
+Task: Extract structured information from the job description text.
+Return the result as a raw JSON object (NO markdown code blocks, NO backticks, just the raw JSON string). It must exactly match this structure:
+{
+  "title": "string (the job title)",
+  "experienceLevel": "string (one of: 'Fresher', 'Junior', 'Mid', 'Senior', 'Lead', 'Any')",
+  "minExperience": number | null,
+  "maxExperience": number | null,
+  "location": "string (e.g. Remote, Hybrid, Bangalore, etc)",
+  "description": "string (a concise summary of the role, 2-3 sentences max)",
+  "weightedSkills": [
+    {
+      "skill": "string",
+      "type": "string (either 'must-have' or 'nice-to-have')"
+    }
+  ]
+}
+
+Rules for weightedSkills:
+- 'must-have' for essential skills required for the job.
+- 'nice-to-have' for preferred or bonus skills.
+
+Job Description Text:
+"""
+${jdText.substring(0, 30000)}
+"""
+`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      }
+    });
+
+    const resultText = response.text;
+    const data = JSON.parse(resultText);
+    return data;
+  } catch (error) {
+    console.error('AI JD Parsing failed:', error);
+    throw new Error('AI JD parsing failed: ' + error.message);
+  }
+};
+
+module.exports = { analyzeResumeWithAI, parseJDWithAI };

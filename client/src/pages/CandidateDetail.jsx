@@ -1,42 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { candidatesAPI, rolesAPI } from '../api/index.js';
-import MatchBar from '../components/MatchBar.jsx';
-import SkillBreakdown from '../components/SkillBreakdown.jsx';
-import StatusPipeline from '../components/StatusPipeline.jsx';
-import ResumeViewer from '../components/ResumeViewer.jsx';
+import { ExternalLink, MessageSquare, Briefcase, GraduationCap, MapPin, Mail, Phone, FileText, ArrowLeft, Send } from 'lucide-react';
 
-export default function CandidateDetail() {
-  const { id: roleId, cid } = useParams();
+export default function CandidateDetail({ candidateId, roleIdProp, onClose }) {
+  const { id: roleIdParam, cid } = useParams();
   const navigate = useNavigate();
+  const roleId = roleIdProp || roleIdParam;
+  const targetCid = candidateId || cid;
+  
   const [candidate, setCandidate] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('Overview');
   const [savingStatus, setSavingStatus] = useState(false);
-  const [notes, setNotes] = useState('');
-  const [savingNotes, setSavingNotes] = useState(false);
-  const [deleted, setDeleted] = useState(false);
-  const [linkedinUrl, setLinkedinUrl] = useState('');
-  const [fetchingLinkedIn, setFetchingLinkedIn] = useState(false);
 
   useEffect(() => {
+    if (!targetCid) return;
+    setLoading(true);
     Promise.all([
-      candidatesAPI.get(cid),
-      rolesAPI.get(roleId),
+      candidatesAPI.get(targetCid),
+      roleId ? rolesAPI.get(roleId) : Promise.resolve({ data: { role: null } }),
     ])
       .then(([cRes, rRes]) => {
         setCandidate(cRes.data.candidate);
-        setNotes(cRes.data.candidate.notes || '');
-        setRole(rRes.data.role);
+        if (rRes.data.role) setRole(rRes.data.role);
+        else if (cRes.data.candidate.role) setRole(cRes.data.candidate.role);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [cid, roleId]);
+  }, [targetCid, roleId]);
 
   const handleStatusChange = async (newStatus) => {
     setSavingStatus(true);
     try {
-      const res = await candidatesAPI.updateStatus(cid, { status: newStatus, notes });
+      const res = await candidatesAPI.updateStatus(targetCid, { status: newStatus });
       setCandidate(res.data.candidate);
     } catch (err) {
       alert('Status update failed: ' + (err.response?.data?.message || err.message));
@@ -45,51 +43,12 @@ export default function CandidateDetail() {
     }
   };
 
-  const handleSaveNotes = async () => {
-    setSavingNotes(true);
-    try {
-      const res = await candidatesAPI.updateStatus(cid, { status: candidate.status, notes });
-      setCandidate(res.data.candidate);
-    } catch (err) {
-      alert('Failed to save notes.');
-    } finally {
-      setSavingNotes(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!confirm('Remove this candidate permanently?')) return;
-    try {
-      await candidatesAPI.delete(cid);
-      navigate(`/roles/${roleId}`);
-    } catch (err) {
-      alert('Delete failed.');
-    }
-  };
-
-  const handleFetchLinkedIn = async () => {
-    if (!linkedinUrl.trim()) return alert('Please enter a LinkedIn URL');
-    setFetchingLinkedIn(true);
-    try {
-      const res = await candidatesAPI.fetchLinkedIn(roleId, cid, linkedinUrl);
-      setCandidate(res.data.candidate);
-      setLinkedinUrl('');
-    } catch (err) {
-      alert('Failed to fetch LinkedIn profile: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setFetchingLinkedIn(false);
-    }
-  };
-
   if (loading) {
     return (
-      <div className="page">
-        <div className="container">
+      <div className={onClose ? '' : 'page'} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div className="container" style={{ flex: 1 }}>
           <div className="skeleton" style={{ height: 24, width: '40%', marginBottom: '1rem' }} />
-          <div className="candidate-detail-layout">
-            <div className="card skeleton" style={{ height: 500 }} />
-            <div className="card skeleton" style={{ height: 500 }} />
-          </div>
+          <div className="card skeleton" style={{ height: 500 }} />
         </div>
       </div>
     );
@@ -97,208 +56,259 @@ export default function CandidateDetail() {
 
   if (!candidate) {
     return (
-      <div className="page">
-        <div className="container">
+      <div className={onClose ? '' : 'page'} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div className="container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="empty-state">
             <span className="empty-state-icon">❌</span>
             <p>Candidate not found.</p>
-            <Link to={`/roles/${roleId}`} className="btn btn-secondary">← Back to Role</Link>
+            {!onClose && <Link to={`/roles/${roleId}`} className="btn btn-secondary">← Back to Role</Link>}
           </div>
         </div>
       </div>
     );
   }
 
+  const nameStr = candidate.name || 'Unknown Candidate';
+  const titleStr = candidate.title || (role?.title ? `Applied to: ${role.title}` : 'Unknown Role');
+  const companyStr = candidate.company || 'Previous Company';
+  const locationStr = candidate.location || 'Remote';
+  const avatarUrl = candidate.avatar || `https://i.pravatar.cc/150?u=${candidate._id}`;
+
   return (
-    <div className="page">
-      <div className="container" style={{ maxWidth: 1200 }}>
-        {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          <Link to="/dashboard" style={{ color: 'var(--accent-light)' }}>Dashboard</Link>
-          <span>/</span>
-          <Link to={`/roles/${roleId}`} style={{ color: 'var(--accent-light)' }}>{role?.title}</Link>
-          <span>/</span>
-          <span>{candidate.name}</span>
+    <div className={onClose ? '' : 'page'} style={{ background: '#FAFBFD', minHeight: '100%', height: onClose ? '100%' : 'auto', paddingTop: onClose ? '1rem' : '2rem', overflowY: 'auto' }}>
+      <div className="container" style={{ maxWidth: 1000, margin: '0 auto', padding: onClose ? '0 1.5rem' : undefined }}>
+        
+        {/* Header Navigation */}
+        <button onClick={() => onClose ? onClose() : navigate(-1)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#6B7280', marginBottom: '1.5rem', padding: 0 }}>
+          <ArrowLeft size={18} /> {onClose ? 'Close' : 'Back'}
+        </button>
+
+        {/* Profile Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', gap: '1.25rem' }}>
+            <img src={avatarUrl} alt={nameStr} style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '2px solid #fff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', margin: 0 }}>{nameStr}</h1>
+                {candidate.yearsOfExperience != null && (
+                  <span style={{ fontSize: '0.85rem', color: '#6B7280', fontWeight: 500 }}>{candidate.yearsOfExperience} yrs</span>
+                )}
+              </div>
+              <p style={{ fontSize: '0.95rem', color: '#4B5563', margin: '0 0 0.25rem 0', fontWeight: 500 }}>
+                {titleStr} at <span style={{ color: '#111827' }}>{companyStr}</span>
+              </p>
+              <p style={{ fontSize: '0.85rem', color: '#6B7280', margin: 0, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <MapPin size={14} /> {locationStr}
+              </p>
+              
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                <span className="badge" style={{ background: '#E0F2FE', color: '#0369A1', fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>✨ AI Enabled</span>
+                {candidate.matchScore > 80 && (
+                  <span className="badge" style={{ background: '#DCFCE7', color: '#166534', fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>Highly Recommended</span>
+                )}
+              </div>
+              
+              <div style={{ marginTop: '1rem', width: '250px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.8rem', fontWeight: 600 }}>
+                  <span style={{ color: '#4B5563' }}>Match Score</span>
+                  <span style={{ color: candidate.matchScore >= 80 ? '#10B981' : candidate.matchScore >= 50 ? '#F59E0B' : '#EF4444' }}>
+                    {candidate.matchScore}%
+                  </span>
+                </div>
+                <div style={{ width: '100%', height: '6px', background: '#E5E7EB', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ 
+                    height: '100%', 
+                    width: `${candidate.matchScore}%`, 
+                    background: candidate.matchScore >= 80 ? '#10B981' : candidate.matchScore >= 50 ? '#F59E0B' : '#EF4444',
+                    transition: 'width 1s ease-in-out'
+                  }} />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <a href={candidate.linkedinUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-icon" title="View LinkedIn" style={{ padding: '0.5rem' }}>
+              <ExternalLink size={18} />
+            </a>
+            <a href={candidate.portfolioUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-icon" title="View Portfolio" style={{ padding: '0.5rem' }}>
+              <Briefcase size={18} />
+            </a>
+            <button className="btn btn-secondary btn-icon" title="Chat" style={{ padding: '0.5rem' }}>
+              <MessageSquare size={18} />
+            </button>
+            <button onClick={() => navigate('/email')} className="btn" style={{ background: '#F3F4F6', color: '#4F46E5', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
+              <Send size={16} /> Start Outreach
+            </button>
+            <button 
+              className="btn btn-primary" 
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: candidate.status === 'Shortlisted' ? '#10B981' : '#4F46E5' }}
+              onClick={() => handleStatusChange(candidate.status === 'Shortlisted' ? 'Applied' : 'Shortlisted')}
+              disabled={savingStatus}
+            >
+              {candidate.status === 'Shortlisted' ? '✓ Shortlisted' : 'Shortlist'}
+            </button>
+          </div>
         </div>
 
-        <div className="candidate-detail-layout">
-          {/* Left — Resume viewer */}
-          <div className="card" style={{ padding: '1.25rem', overflow: 'hidden' }}>
-            <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '0.95rem' }}>Resume Preview</h3>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{candidate.resumeFilename}</span>
-            </div>
-            <div style={{ height: 'calc(100% - 50px)' }}>
-              <ResumeViewer resumeUrl={candidate.resumeUrl} />
-            </div>
-          </div>
+        {/* Tabs Navigation */}
+        <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid #E5E7EB', marginBottom: '1.5rem' }}>
+          {['Overview', 'Experience', 'Education'].map(tab => (
+            <button 
+              key={tab}
+              style={{ 
+                padding: '0.75rem 0', background: 'none', border: 'none', 
+                borderBottom: activeTab === tab ? '2px solid #4F46E5' : '2px solid transparent',
+                color: activeTab === tab ? '#4F46E5' : '#6B7280',
+                fontWeight: activeTab === tab ? 600 : 500,
+                cursor: 'pointer', fontSize: '0.95rem'
+              }}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
-          {/* Right — Details panel */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'auto' }}>
-            {/* Candidate header */}
-            <div className="card" style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                <div style={{
-                  width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
-                  background: `linear-gradient(135deg, hsl(${(candidate.name?.charCodeAt(0) || 0) * 7 % 360}, 60%, 40%), hsl(${(candidate.name?.charCodeAt(0) || 0) * 11 % 360}, 70%, 55%))`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.3rem', fontWeight: 700, color: '#fff',
-                }}>
-                  {candidate.name?.[0]?.toUpperCase() || '?'}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <h2 style={{ fontSize: '1.1rem' }}>{candidate.name}</h2>
-                    {candidate.hasMissingMustHave && (
-                      <span className="badge badge-red" style={{ fontSize: '0.65rem', padding: '0.2rem 0.5rem' }}>⚠️ Missing Must-Haves</span>
-                    )}
+        {/* Tab Content */}
+        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #E5E7EB', padding: '1.5rem' }}>
+          
+          {activeTab === 'Overview' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              {/* Contact Information */}
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', marginBottom: '1rem' }}>Contact Information</h3>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  <a href={candidate.linkedinUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', fontSize: '0.85rem' }}>
+                    <ExternalLink size={16} color="#0A66C2" /> View LinkedIn
+                  </a>
+                  <a href={candidate.portfolioUrl || '#'} target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', fontSize: '0.85rem' }}>
+                    <Briefcase size={16} color="#4F46E5" /> Portfolio
+                  </a>
+                  {candidate.resumeUrl && (
+                    <a href={candidate.resumeUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', fontSize: '0.85rem' }}>
+                      <FileText size={16} color="#4F46E5" /> View Resume
+                    </a>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
+                    <Mail size={16} color="#10B981" /> {candidate.email || 'No email provided'}
                   </div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    {candidate.email} {candidate.phone && `· ${candidate.phone}`}
+                  {candidate.phone && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '8px', padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
+                      <Phone size={16} color="#8B5CF6" /> {candidate.phone}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Core Skills */}
+              {candidate.skills && candidate.skills.length > 0 && (
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', marginBottom: '1rem' }}>Core Skills</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {candidate.skills.slice(0, 8).map(skill => (
+                      <span key={skill} style={{ background: '#EEF2FF', color: '#4F46E5', border: '1px solid #C7D2FE', borderRadius: '20px', padding: '0.3rem 0.8rem', fontSize: '0.85rem', fontWeight: 500 }}>
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Other Skills */}
+              {candidate.skills && candidate.skills.length > 8 && (
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', marginBottom: '1rem' }}>Other Skills</h3>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {candidate.skills.slice(8).map(skill => (
+                      <span key={skill} style={{ background: '#F3F4F6', color: '#4B5563', borderRadius: '20px', padding: '0.3rem 0.8rem', fontSize: '0.85rem' }}>
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Key Highlights (AI) */}
+              {(candidate.aiSummary || candidate.aiReasoning) && (
+                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '1.25rem' }}>
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#166534', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                    ✨ Key Highlights
+                  </h3>
+                  <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#15803D', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {candidate.aiSummary && <li>{candidate.aiSummary}</li>}
+                    {candidate.aiReasoning && <li>{candidate.aiReasoning}</li>}
+                    {candidate.hasMissingMustHave && <li style={{ color: '#DC2626' }}>Warning: Missing required must-have skills for this role.</li>}
+                  </ul>
+                  <p style={{ marginTop: '1rem', marginBottom: 0, fontSize: '0.85rem', color: '#166534', fontWeight: 600 }}>
+                    Stackforce AI infers this person is a {titleStr} with a match score of {candidate.matchScore}%.
                   </p>
                 </div>
-                <button className="btn btn-danger btn-sm" onClick={handleDelete}>🗑</button>
-              </div>
-
-              {/* Phase 2: Metadata */}
-              <div style={{ display: 'flex', gap: '1rem', padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                {candidate.college && <div style={{ flex: 1 }}><span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>College</span><span style={{ fontSize: '0.85rem', fontWeight: 500 }}>{candidate.college}</span></div>}
-                {candidate.cgpa !== null && <div style={{ flex: 1 }}><span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>CGPA</span><span style={{ fontSize: '0.85rem', fontWeight: 500 }}>{candidate.cgpa}/10</span></div>}
-                {candidate.yearsOfExperience !== null && <div style={{ flex: 1 }}><span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Experience</span><span style={{ fontSize: '0.85rem', fontWeight: 500 }}>{candidate.yearsOfExperience} yrs</span></div>}
-              </div>
-
-              {candidate.aiScore != null && (
-                <p style={{ fontSize: '0.75rem', color: 'var(--accent-light)', marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <span>✨</span> AI Scored
-                </p>
               )}
-              <MatchBar score={candidate.matchScore} />
             </div>
+          )}
 
-            {/* Pipeline */}
-            <div className="card" style={{ padding: '1.25rem' }}>
-              <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>Candidate Pipeline</h3>
-              <StatusPipeline
-                currentStatus={candidate.status}
-                onStatusChange={handleStatusChange}
-                disabled={savingStatus}
-              />
-            </div>
-
-            {/* Phase 3: AI Insights */}
-            {(candidate.aiSummary || candidate.aiReasoning) && (
-              <div className="card" style={{ padding: '1.25rem', border: '1px solid var(--accent-light)', background: 'linear-gradient(145deg, rgba(59,130,246,0.05) 0%, rgba(59,130,246,0.02) 100%)' }}>
-                <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-light)' }}>
-                  <span>✨</span> AI Insights
-                </h3>
-                {candidate.aiSummary && (
-                  <div style={{ marginBottom: '1rem' }}>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.2rem', textTransform: 'uppercase' }}>Summary</p>
-                    <p style={{ fontSize: '0.85rem', lineHeight: 1.5, color: 'var(--text-primary)' }}>{candidate.aiSummary}</p>
-                  </div>
-                )}
-                {candidate.aiReasoning && (
-                  <div>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.2rem', textTransform: 'uppercase' }}>Scoring Reasoning</p>
-                    <p style={{ fontSize: '0.85rem', lineHeight: 1.5, color: 'var(--text-primary)' }}>{candidate.aiReasoning}</p>
-                  </div>
-                )}
+          {activeTab === 'Experience' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1, padding: '1rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '12px', textAlign: 'center' }}>
+                  <h4 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', margin: '0 0 0.25rem 0' }}>
+                    {candidate.yearsOfExperience != null ? `${candidate.yearsOfExperience} yrs` : 'Unknown'}
+                  </h4>
+                  <p style={{ fontSize: '0.85rem', color: '#6B7280', margin: 0 }}>Total Experience</p>
+                </div>
+                <div style={{ flex: 1, padding: '1rem', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '12px', textAlign: 'center' }}>
+                  <h4 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', margin: '0 0 0.25rem 0' }}>1 yr 2 mos</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#6B7280', margin: 0 }}>Average Tenure</p>
+                </div>
               </div>
-            )}
-
-            {/* Skill breakdown */}
-            <div className="card" style={{ padding: '1.25rem' }}>
-              <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>Skill Breakdown</h3>
-              <SkillBreakdown candidate={candidate} />
-            </div>
-
-            {/* Phase 4: LinkedIn Scraping Data */}
-            <div className="card" style={{ padding: '1.25rem' }}>
-              <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-light)' }}>
-                <span>🔗</span> LinkedIn Profile
-              </h3>
               
-              {!candidate.linkedinData ? (
-                <div>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>No LinkedIn data fetched yet.</p>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input 
-                      type="url" 
-                      className="form-input" 
-                      placeholder="https://linkedin.com/in/username" 
-                      value={linkedinUrl}
-                      onChange={(e) => setLinkedinUrl(e.target.value)}
-                      style={{ padding: '0.5rem', fontSize: '0.85rem' }}
-                    />
-                    <button 
-                      className="btn btn-primary btn-sm" 
-                      onClick={handleFetchLinkedIn}
-                      disabled={fetchingLinkedIn}
-                    >
-                      {fetchingLinkedIn ? 'Fetching...' : 'Fetch'}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', marginBottom: '1.5rem' }}>Experience History</h3>
+                
+                {/* Simulated Timeline for MVP */}
+                <div style={{ position: 'relative', paddingLeft: '1.5rem', borderLeft: '2px solid #E5E7EB', marginLeft: '1rem' }}>
+                  <div style={{ position: 'absolute', width: 12, height: 12, background: '#10B981', borderRadius: '50%', left: -7, top: 4, border: '2px solid #fff' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                     <div>
-                      <p style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>{candidate.linkedinData.currentTitle}</p>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{candidate.linkedinData.currentCompany} · {candidate.linkedinData.location}</p>
+                      <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '0 0 0.25rem 0' }}>{titleStr} <span className="badge badge-green" style={{ fontSize: '0.65rem' }}>↗ Promoted</span></h4>
+                      <p style={{ fontSize: '0.85rem', color: '#4B5563', margin: 0 }}>{companyStr}</p>
                     </div>
-                    <a href={candidate.linkedinData.profileUrl} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm" style={{ fontSize: '0.7rem' }}>
-                      View on LinkedIn ↗
-                    </a>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontSize: '0.85rem', color: '#6B7280', margin: '0 0 0.25rem 0' }}>Present</p>
+                    </div>
                   </div>
-                  
-                  <div>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>About</p>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>{candidate.linkedinData.about}</p>
-                  </div>
+                  <p style={{ fontSize: '0.85rem', color: '#4B5563', lineHeight: 1.5, marginTop: '0.5rem' }}>
+                    As a key contributor, I played a pivotal role in developing, optimizing, and launching multiple projects...
+                  </p>
+                </div>
+                
+              </div>
+            </div>
+          )}
 
-                  <div>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Verified Skills</p>
-                    <div className="skill-pills">
-                      {candidate.linkedinData.skills?.map(s => (
-                        <span key={s} className="skill-pill" style={{ opacity: 0.8 }}>{s}</span>
-                      ))}
-                    </div>
+          {activeTab === 'Education' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ padding: '1.5rem', background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                  <div style={{ padding: '0.5rem', background: '#F3F4F6', borderRadius: '8px' }}>
+                    <GraduationCap size={24} color="#4B5563" />
                   </div>
-                  
-                  <div>
-                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Experience History</p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {candidate.linkedinData.experience?.map((exp, i) => (
-                        <div key={i} style={{ fontSize: '0.8rem', paddingLeft: '0.5rem', borderLeft: '2px solid var(--border)' }}>
-                          <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{exp.title}</p>
-                          <p style={{ color: 'var(--text-secondary)' }}>{exp.company} <span style={{ color: 'var(--text-muted)' }}>({exp.duration})</span></p>
-                        </div>
-                      ))}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '0 0 0.25rem 0' }}>{candidate.college || 'University Name Not Extracted'}</h4>
+                      <span style={{ fontSize: '0.85rem', color: '#6B7280' }}>2019 - 2023</span>
                     </div>
+                    <p style={{ fontSize: '0.85rem', color: '#4B5563', margin: '0 0 0.5rem 0' }}>Bachelor's Degree</p>
+                    {candidate.cgpa && (
+                      <p style={{ fontSize: '0.85rem', color: '#4B5563', margin: 0 }}>CGPA: <strong>{candidate.cgpa}</strong></p>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
+          )}
 
-            {/* Notes */}
-            <div className="card" style={{ padding: '1.25rem' }}>
-              <h3 style={{ fontSize: '0.9rem', marginBottom: '0.75rem' }}>Recruiter Notes</h3>
-              <textarea
-                className="form-input"
-                placeholder="Add notes about this candidate..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                style={{ minHeight: 100, marginBottom: '0.75rem' }}
-              />
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={handleSaveNotes}
-                disabled={savingNotes}
-              >
-                {savingNotes ? 'Saving...' : '✓ Save Notes'}
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

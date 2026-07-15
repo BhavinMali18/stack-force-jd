@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Home, Search, LayoutGrid, MessageSquare, Users, Mail, Zap, ChevronRight, Layers } from 'lucide-react';
+import { Home, Search, LayoutGrid, ChevronRight, Layers, Mail } from 'lucide-react';
 
 export default function Sidebar() {
   const { company, logout } = useAuth();
@@ -16,10 +16,8 @@ export default function Sidebar() {
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: Home },
     { name: 'Projects', path: '/projects', icon: LayoutGrid, activeCheck: '/projects' },
-    { name: 'Chat History', path: '/chat', icon: MessageSquare },
-    { name: 'Workspace', path: '/workspace', icon: Users },
+    { name: 'Explore', path: '/explore', icon: Search },
     { name: 'Email Accounts', path: '/email', icon: Mail },
-    { name: 'Usage & Billing', path: '/billing', icon: Zap },
   ];
 
   return (

@@ -1,5 +1,8 @@
 const Role = require('../models/Role');
 const Candidate = require('../models/Candidate');
+const { extractText } = require('../services/resumeParser');
+const { parseJDWithAI } = require('../services/aiService');
+const fs = require('fs');
 
 /**
  * POST /api/roles
@@ -98,4 +101,29 @@ const deleteRole = async (req, res) => {
   res.json({ success: true, message: 'Role deleted.' });
 };
 
-module.exports = { createRole, getRoles, getRoleById, updateRole, deleteRole };
+/**
+ * POST /api/roles/parse-jd
+ */
+const parseJD = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded.' });
+  }
+  
+  try {
+    const text = await extractText(req.file.path);
+    const parsedData = await parseJDWithAI(text);
+    
+    // Clean up uploaded file
+    fs.unlinkSync(req.file.path);
+    
+    res.json({ success: true, data: parsedData });
+  } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    console.error('JD Parsing Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { createRole, getRoles, getRoleById, updateRole, deleteRole, parseJD };

@@ -714,8 +714,10 @@ select.form-input { cursor: pointer; }
 
 /* --- Override Page for inside sidebar layout --- */
 .app-layout .page {
-  padding: 0;
+  padding: 2.5rem;
   min-height: auto;
+  height: 100%;
+  overflow-y: auto;
 }
 
 /* --- Dashboard Specific --- */

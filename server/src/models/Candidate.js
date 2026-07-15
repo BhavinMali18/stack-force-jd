@@ -5,7 +5,6 @@ const candidateSchema = new mongoose.Schema(
     role: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Role',
-      required: true,
     },
     company: {
       type: mongoose.Schema.Types.ObjectId,

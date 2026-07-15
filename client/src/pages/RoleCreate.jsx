@@ -58,28 +58,35 @@ export default function RoleCreate() {
               id="jd-upload" 
               style={{ display: 'none' }} 
               accept=".pdf,.doc,.docx,.txt"
-              onChange={(e) => {
-                if(e.target.files.length > 0) {
-                  // Simulate AI Auto-fill
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if(file) {
                   setLoading(true);
-                  setTimeout(() => {
+                  setError('');
+                  try {
+                    const formData = new FormData();
+                    formData.append('jd', file);
+                    const res = await rolesAPI.parseJD(formData);
+                    const parsedData = res.data.data;
+                    
                     setForm(prev => ({
                       ...prev,
-                      title: 'Senior Frontend Engineer',
-                      experienceLevel: 'Senior',
-                      location: 'Remote',
-                      minExperience: 4,
-                      maxExperience: 8,
-                      description: 'We are looking for a Senior Frontend Engineer to join our core team. You will be responsible for architecting and building out our new AI-powered features using React and modern CSS.',
-                      weightedSkills: [
-                        { name: 'React', weight: 10, isMandatory: true },
-                        { name: 'JavaScript', weight: 8, isMandatory: true },
-                        { name: 'CSS', weight: 6, isMandatory: false }
-                      ]
+                      title: parsedData.title || prev.title,
+                      experienceLevel: parsedData.experienceLevel || prev.experienceLevel,
+                      location: parsedData.location || prev.location,
+                      minExperience: parsedData.minExperience !== null ? parsedData.minExperience : prev.minExperience,
+                      maxExperience: parsedData.maxExperience !== null ? parsedData.maxExperience : prev.maxExperience,
+                      description: parsedData.description || prev.description,
+                      weightedSkills: (Array.isArray(parsedData.weightedSkills) && parsedData.weightedSkills.length > 0) ? parsedData.weightedSkills : prev.weightedSkills
                     }));
-                    setLoading(false);
                     alert('✨ Auto-filled project details from Job Description!');
-                  }, 1500);
+                  } catch (err) {
+                    console.error(err);
+                    setError(err.response?.data?.message || 'Failed to parse Job Description. Please try again.');
+                  } finally {
+                    setLoading(false);
+                    e.target.value = null; // reset file input
+                  }
                 }
               }}
             />

@@ -39,6 +39,7 @@ export const rolesAPI = {
   create: (data) => api.post('/roles', data),
   update: (id, data) => api.patch(`/roles/${id}`, data),
   remove: (id) => api.delete(`/roles/${id}`),
+  parseJD: (formData) => api.post('/roles/parse-jd', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
 // --- Email ---
@@ -56,14 +57,18 @@ export const candidatesAPI = {
     api.post(`/roles/${roleId}/candidates/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+  uploadGlobal: (formData) =>
+    api.post('/candidates/upload-global', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   list: (roleId, params) => api.get(`/roles/${roleId}/candidates`, { params }),
+  getAll: () => api.get('/candidates'),
   get: (id) => api.get(`/candidates/${id}`),
   updateStatus: (id, data) => api.patch(`/candidates/${id}/status`, data),
   remove: (id) => api.delete(`/candidates/${id}`),
   export: (roleId, format = 'csv') =>
     api.get(`/roles/${roleId}/export`, { params: { format }, responseType: 'blob' }),
   analytics: (roleId) => api.get(`/roles/${roleId}/analytics`),
-  fetchLinkedIn: (roleId, id, linkedinUrl) => api.post(`/roles/${roleId}/candidates/${id}/linkedin`, { linkedinUrl }),
 };
 
 export default api;
