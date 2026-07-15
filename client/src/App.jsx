@@ -15,6 +15,7 @@ import Upload from './pages/Upload.jsx';
 import EmailAccounts from './pages/EmailAccounts.jsx';
 import Projects from './pages/Projects.jsx';
 import Explore from './pages/Explore.jsx';
+import TalentPool from './pages/TalentPool.jsx';
 
 // Guard — redirects to /login if not authenticated
 function PrivateRoute({ children }) {
@@ -53,6 +54,7 @@ export default function App() {
       <Route path="/dashboard" element={<PrivateRoute><AppLayout title="Dashboard"><Dashboard /></AppLayout></PrivateRoute>} />
       <Route path="/projects" element={<PrivateRoute><AppLayout title="Projects (0)"><Projects /></AppLayout></PrivateRoute>} />
       <Route path="/explore" element={<PrivateRoute><AppLayout title="Global Pool"><Explore /></AppLayout></PrivateRoute>} />
+      <Route path="/talent-pool" element={<PrivateRoute><AppLayout title="Talent Pool"><TalentPool /></AppLayout></PrivateRoute>} />
       <Route path="/email" element={<PrivateRoute><AppLayout title="Email Accounts"><EmailAccounts /></AppLayout></PrivateRoute>} />
       <Route path="/roles/new" element={<PrivateRoute><AppLayout title="Create Project"><RoleCreate /></AppLayout></PrivateRoute>} />
       <Route path="/roles/:id" element={<PrivateRoute><AppLayout title="Project Details"><RoleDetail /></AppLayout></PrivateRoute>} />

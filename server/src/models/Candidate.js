@@ -115,11 +115,24 @@ const candidateSchema = new mongoose.Schema(
       type: Object,
       default: null,
     },
+    // ── Distributed Architecture: Processing Status ─────────────
+    // Tracks the resume through the async processing pipeline:
+    //   queued → processing → done / failed
+    // Equivalent to a DynamoDB status field polled by the UI.
+    processingStatus: {
+      type: String,
+      enum: ['queued', 'processing', 'done', 'failed'],
+      default: 'done', // legacy candidates (synchronous upload) are already done
+    },
   },
   { timestamps: true }
 );
 
 // Index for fast sorting by score per role
 candidateSchema.index({ role: 1, matchScore: -1 });
+
+// MongoDB $text index — simulates Elasticsearch full-text search.
+// Allows queries like: Candidate.find({ $text: { $search: 'react node.js' } })
+candidateSchema.index({ resumeText: 'text', name: 'text' });
 
 module.exports = mongoose.model('Candidate', candidateSchema);

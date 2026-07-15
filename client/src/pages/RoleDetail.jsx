@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { rolesAPI, candidatesAPI } from '../api/index.js';
 import CandidateCard from '../components/CandidateCard.jsx';
 import MatchBar from '../components/MatchBar.jsx';
+import AutoSuggestPanel from '../components/AutoSuggestPanel.jsx';
 
 const STATUS_FILTERS = ['All', 'Applied', 'Shortlisted', 'Interview', 'Selected', 'Rejected'];
 
@@ -170,6 +171,9 @@ export default function RoleDetail() {
             </label>
           </div>
         </div>
+
+        {/* Auto-Suggest from Talent Pool */}
+        <AutoSuggestPanel roleId={id} onCandidateAdded={fetchCandidates} />
 
         {/* Candidates */}
         {candidates.length === 0 ? (
