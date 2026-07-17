@@ -1,0 +1,12 @@
+{
+  "name": "talentforce-railway-root",
+  "version": "1.0.0",
+  "description": "Root package.json to help Railway deploy the /server folder automatically.",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "cd server && npm install",
+    "start": "cd server && npm start"
+  }
+}
