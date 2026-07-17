@@ -37,10 +37,21 @@ app.set('trust proxy', 1);
 // ── Logging ─────────────────────────────────────────────────
 app.use(morgan(IS_PRODUCTION ? 'combined' : 'dev'));
 
+// ── CORS ────────────────────────────────────────────────────
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(o => o.trim());
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile, curl, health checks)
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true,
+}));
+
 // ── Rate Limiting ──────────────────────────────────────────
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500,
+  max: 10000, // Increased to 10,000 for bulk resume uploads
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please slow down.' },
@@ -53,17 +64,6 @@ const authLimiter = rateLimit({
 });
 
 app.use(globalLimiter);
-
-// ── CORS ────────────────────────────────────────────────────
-const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').map(o => o.trim());
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (mobile, curl, health checks)
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`CORS blocked: ${origin}`));
-  },
-  credentials: true,
-}));
 
 app.use(express.json({ limit: '10mb' }));
 
