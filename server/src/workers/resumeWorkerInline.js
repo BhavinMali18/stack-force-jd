@@ -10,15 +10,18 @@ const { computeMatchScore } = require('../services/skillMatcher');
 const Candidate = require('../models/Candidate');
 const Role = require('../models/Role');
 
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
 function startResumeWorker(io) {
-  resumeQueue.process(async (job) => {
-    const { candidateId, filePath, roleId, requiredSkills, weightedSkills } = job.data;
-    console.log(`⏳ [ResumeWorker] Processing: ${filePath}`);
+  const processJob = async (job) => {
+    const { candidateId, filePath, resumeKey, roleId, requiredSkills, weightedSkills } = job.data;
+    const targetFile = filePath || resumeKey;
+    console.log(`⏳ [ResumeWorker] Processing: ${targetFile}`);
 
     // 1. Parse
     let parsed;
     try {
-      parsed = await parseResume(filePath);
+      parsed = await parseResume(targetFile);
     } catch (err) {
       await Candidate.findByIdAndUpdate(candidateId, { processingStatus: 'failed' });
       throw err;
@@ -62,7 +65,17 @@ function startResumeWorker(io) {
     }
 
     return { candidateId, score: result.score };
-  });
+  };
+
+  if (IS_PRODUCTION) {
+    const { Worker } = require('bullmq');
+    const { QUEUE_NAME } = require('../queue/queueFactory');
+    const { getRedisClient } = require('../config/redis');
+    const worker = new Worker(QUEUE_NAME, processJob, { connection: getRedisClient(), concurrency: 4 });
+    worker.on('failed', (job, err) => console.error(`❌ [ResumeWorker] Job failed:`, err));
+  } else {
+    resumeQueue.process(processJob);
+  }
 
   console.log(`🚀 [ResumeWorker] Registered inline — queue: resume-processing`);
 }

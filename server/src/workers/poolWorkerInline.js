@@ -13,10 +13,13 @@ const axios = require('axios').default;
 
 const CONCURRENCY = 4;
 
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
 function startPoolWorker(io, apiPort = 5000) {
-  poolQueue.process(async (job) => {
-    const { poolResumeId, filePath, companyId } = job.data;
-    console.log(`⏳ [PoolWorker] Processing: ${filePath}`);
+  const processJob = async (job) => {
+    const { poolResumeId, filePath, resumeKey, companyId } = job.data;
+    const targetFile = filePath || resumeKey;
+    console.log(`⏳ [PoolWorker] Processing: ${targetFile}`);
 
     // 1. Mark as processing
     await PoolResume.findByIdAndUpdate(poolResumeId, { processingStatus: 'processing' });
@@ -24,7 +27,7 @@ function startPoolWorker(io, apiPort = 5000) {
     // 2. Parse (Python or Node.js fallback)
     let parsed;
     try {
-      parsed = await parseResume(filePath);
+      parsed = await parseResume(targetFile);
     } catch (err) {
       await PoolResume.findByIdAndUpdate(poolResumeId, { processingStatus: 'failed', parseError: err.message });
       throw err;
@@ -58,7 +61,17 @@ function startPoolWorker(io, apiPort = 5000) {
     }
 
     return { poolResumeId, name: parsed.name };
-  });
+  };
+
+  if (IS_PRODUCTION) {
+    const { Worker } = require('bullmq');
+    const { POOL_QUEUE_NAME } = require('../queue/poolQueue');
+    const { getRedisClient } = require('../config/redis');
+    const worker = new Worker(POOL_QUEUE_NAME, processJob, { connection: getRedisClient(), concurrency: CONCURRENCY });
+    worker.on('failed', (job, err) => console.error(`❌ [PoolWorker] Job failed:`, err));
+  } else {
+    poolQueue.process(processJob);
+  }
 
   console.log(`🚀 [PoolWorker] Registered inline — queue: pool-processing (concurrency: ${CONCURRENCY})`);
 }
