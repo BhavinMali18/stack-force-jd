@@ -5,11 +5,9 @@ node_modules/
 uploads/
 server/uploads/
 
-# Environment (NEVER commit real .env)
-.env
+# Environment (Warning: Committing secrets is a security risk)
 .env.local
 .env.production.local
-server/.env
 client/.env.local
 
 # Build outputs
