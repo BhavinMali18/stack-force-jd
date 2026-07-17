@@ -1,0 +1,7 @@
+name = "stack-force-jd"
+compatibility_date = "2024-04-03"
+
+# --- ADD THIS BLOCK ---
+[assets]
+directory = "./dist"
+binding = "ASSETS"
