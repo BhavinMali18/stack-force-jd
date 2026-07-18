@@ -281,6 +281,7 @@ export default function RoleDetail() {
           </div>
         )}
       </div>
+      </div>
     </>
   );
 }
