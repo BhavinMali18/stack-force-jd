@@ -17,7 +17,7 @@ const sendTokenResponse = (company, statusCode, res) => {
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'none',
   };
 
   res
