@@ -87,7 +87,6 @@ export default function Explore() {
           candidatesAPI.getAll().then(res => setCandidates(res.data.candidates || []));
         }} 
       />
-    <>
       <div className="main-header" style={{ padding: '0 2.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <h1 style={{ fontSize: '1.25rem' }}>Global Dataset ({displayCandidates.length})</h1>
