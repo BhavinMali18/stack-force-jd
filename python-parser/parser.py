@@ -32,6 +32,18 @@ from flashtext import KeywordProcessor
 
 from skills import SKILL_DICTIONARY
 
+# Initialize PaddleOCR globally to avoid reloading model on every request
+import logging
+logging.getLogger("ppocr").setLevel(logging.ERROR)
+try:
+    from paddleocr import PaddleOCR
+    import numpy as np
+    from pdf2image import convert_from_path
+    ocr_model = PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
+except ImportError:
+    ocr_model = None
+    print("Warning: PaddleOCR dependencies not found. OCR fallback disabled.")
+
 # Initialize Flashtext for O(N) multi-keyword extraction
 skill_processor = KeywordProcessor(case_sensitive=False)
 skill_processor.add_keywords_from_list(SKILL_DICTIONARY)
@@ -66,12 +78,42 @@ def extract_text_docx(file_path: str) -> str:
         raise RuntimeError(f"DOCX parse error: {e}")
 
 
+def extract_text_ocr(file_path: str) -> str:
+    """Fallback OCR using PaddleOCR for scanned PDFs/Images."""
+    if not ocr_model:
+        return ""
+    
+    text_blocks = []
+    try:
+        images = convert_from_path(file_path, dpi=200)
+        for img in images:
+            # Convert PIL image to numpy array for PaddleOCR
+            img_np = np.array(img)
+            result = ocr_model.ocr(img_np, cls=True)
+            if result and result[0]:
+                for line in result[0]:
+                    # line[1][0] contains the recognized text
+                    text_blocks.append(line[1][0])
+    except Exception as e:
+        print(f"OCR failed: {e}")
+    return "\n".join(text_blocks)
+
+
 def extract_text(file_path: str) -> str:
     ext = os.path.splitext(file_path)[1].lower()
     if ext == ".pdf":
-        return extract_text_pdf(file_path)
+        text = extract_text_pdf(file_path)
+        # If extracted text is suspiciously short, fallback to OCR
+        if len(text.strip()) < 100:
+            ocr_text = extract_text_ocr(file_path)
+            if len(ocr_text) > len(text):
+                text = ocr_text
+        return text
     elif ext in (".docx", ".doc"):
         return extract_text_docx(file_path)
+    elif ext in (".jpg", ".jpeg", ".png"):
+        # Directly OCR images
+        return extract_text_ocr(file_path)
     elif ext == ".txt":
         with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
             return f.read()

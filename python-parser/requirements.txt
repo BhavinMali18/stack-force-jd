@@ -3,3 +3,6 @@ uvicorn[standard]
 pdfplumber
 python-docx
 flashtext
+paddlepaddle
+paddleocr
+pdf2image
