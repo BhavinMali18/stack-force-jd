@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const Company = require('../models/Company');
+const sendEmail = require('../services/emailService');
 const { validationResult } = require('express-validator');
 
 const signAccessToken = (id) =>
@@ -107,4 +109,63 @@ const getMe = async (req, res) => {
   res.json({ success: true, company: req.company });
 };
 
-module.exports = { register, login, logout, refresh, getMe };
+const forgotPassword = async (req, res) => {
+  const company = await Company.findOne({ email: req.body.email });
+
+  if (!company) {
+    // Return 200 anyway to prevent email enumeration
+    return res.status(200).json({ success: true, message: 'If the email is valid, a reset link was sent.' });
+  }
+
+  const resetToken = company.getResetPasswordToken();
+  await company.save({ validateBeforeSave: false });
+
+  const resetUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+
+  try {
+    await sendEmail({
+      email: company.email,
+      subject: 'Password Reset - TalentForce',
+      message: `You requested a password reset. Click here to reset: ${resetUrl}`,
+      html: `<p>You requested a password reset.</p><p>Please click the link below to reset your password:</p><a href="${resetUrl}" target="_blank">Reset Password</a>`,
+    });
+
+    res.status(200).json({ success: true, message: 'Email sent' });
+  } catch (err) {
+    console.error('Email send error:', err);
+    company.resetPasswordToken = undefined;
+    company.resetPasswordExpire = undefined;
+    await company.save({ validateBeforeSave: false });
+    return res.status(500).json({ success: false, message: 'Email could not be sent' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ success: false, errors: errors.array() });
+  }
+
+  const resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+
+  const company = await Company.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+
+  if (!company) {
+    return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+  }
+
+  company.passwordHash = req.body.password;
+  company.resetPasswordToken = undefined;
+  company.resetPasswordExpire = undefined;
+  await company.save();
+
+  sendTokenResponse(company, 200, res);
+};
+
+module.exports = { register, login, logout, refresh, getMe, forgotPassword, resetPassword };

@@ -136,6 +136,12 @@ export default function Auth() {
             </>
           )}
         </div>
+
+        {mode === 'login' && (
+          <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.85rem' }}>
+            <Link to="/forgot-password" style={{ color: 'var(--text-muted)' }}>Forgot your password?</Link>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -5,6 +5,8 @@ import Navbar from './components/Navbar.jsx';
 import AppLayout from './components/AppLayout.jsx';
 import Landing from './pages/Landing.jsx';
 import Auth from './pages/Auth.jsx';
+import ForgotPassword from './pages/ForgotPassword.jsx';
+import ResetPassword from './pages/ResetPassword.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import RoleCreate from './pages/RoleCreate.jsx';
 import RoleDetail from './pages/RoleDetail.jsx';
@@ -49,6 +51,8 @@ export default function App() {
       <Route path="/" element={<><Navbar /><Landing /></>} />
       <Route path="/login" element={<PublicOnlyRoute><><Navbar /><Auth /></></PublicOnlyRoute>} />
       <Route path="/register" element={<PublicOnlyRoute><><Navbar /><Auth /></></PublicOnlyRoute>} />
+      <Route path="/forgot-password" element={<PublicOnlyRoute><><Navbar /><ForgotPassword /></></PublicOnlyRoute>} />
+      <Route path="/reset-password/:token" element={<PublicOnlyRoute><><Navbar /><ResetPassword /></></PublicOnlyRoute>} />
 
       {/* Protected Routes wrapped in new Sidebar Layout */}
       <Route path="/dashboard" element={<PrivateRoute><AppLayout title="Dashboard"><Dashboard /></AppLayout></PrivateRoute>} />
