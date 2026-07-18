@@ -30,8 +30,23 @@ app.use((req, res, next) => {
 });
 
 // --- Middleware ---
+const ALLOWED_ORIGINS = [
+  'https://xstudio.blog',
+  'https://www.xstudio.blog',
+  process.env.CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:3000',
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, mobile apps, etc.)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS not allowed for origin: ${origin}`));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
