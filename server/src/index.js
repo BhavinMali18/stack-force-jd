@@ -8,6 +8,9 @@ const path = require('path');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
 const { Server: SocketIO } = require('socket.io');
 const { connectDB } = require('./config/db');
 const authRoutes = require('./routes/auth.routes');
@@ -59,13 +62,20 @@ const globalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20, // max 20 login/register attempts per 15 min
+  max: 5, // max 5 login/register attempts per 15 min (anti-brute force)
   message: { error: 'Too many auth attempts, please try again later.' },
 });
 
 app.use(globalLimiter);
 
 app.use(express.json({ limit: '10mb' }));
+app.use(cookieParser());
+
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// Data sanitization against XSS
+app.use(xss());
 
 // Serve uploaded resumes statically (dev only - production uses R2)
 if (!IS_PRODUCTION) {

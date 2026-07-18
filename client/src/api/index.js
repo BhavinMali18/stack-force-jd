@@ -3,24 +3,41 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api`,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true, // Send HttpOnly cookies with every request
 });
 
-// Attach JWT token on every request
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('sf_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
-// Handle 401 globally — redirect to login
+// Handle 401 globally — attempt refresh token logic
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem('sf_token');
+  async (err) => {
+    const originalConfig = err.config;
+
+    if (originalConfig.url !== '/auth/refresh' && err.response) {
+      // If 401 Unauthorized and we haven't retried yet
+      if (err.response.status === 401 && !originalConfig._retry) {
+        originalConfig._retry = true;
+
+        try {
+          // Attempt to refresh token using the HttpOnly refresh cookie
+          await api.post('/auth/refresh');
+          
+          // Retry original request
+          return api(originalConfig);
+        } catch (_error) {
+          // Refresh failed, user needs to login again
+          localStorage.removeItem('sf_company');
+          window.location.href = '/login';
+          return Promise.reject(_error);
+        }
+      }
+    }
+
+    // If it's a 401 from the refresh endpoint itself (or another error), force logout
+    if (err.response?.status === 401 && originalConfig.url === '/auth/refresh') {
       localStorage.removeItem('sf_company');
       window.location.href = '/login';
     }
+
     return Promise.reject(err);
   }
 );
@@ -29,6 +46,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
+  logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
 };
 

@@ -2,9 +2,10 @@ const jwt = require('jsonwebtoken');
 const Company = require('../models/Company');
 
 const protect = async (req, res, next) => {
-  let token;
+  // Check cookies first, fallback to Authorization header for backward compatibility
+  let token = req.cookies?.accessToken;
 
-  if (req.headers.authorization?.startsWith('Bearer ')) {
+  if (!token && req.headers.authorization?.startsWith('Bearer ')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
