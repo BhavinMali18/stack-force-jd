@@ -6,10 +6,11 @@ const { SKILL_DICTIONARY } = require('./skillDictionary');
 
 /**
  * Extract raw text from a resume file (PDF or DOCX).
+ * Uses async fs.promises.readFile — never blocks the event loop.
  */
 const extractText = async (filePath) => {
   const ext = path.extname(filePath).toLowerCase();
-  const buffer = fs.readFileSync(filePath);
+  const buffer = await fs.promises.readFile(filePath); // ← non-blocking
 
   if (ext === '.pdf') {
     const data = await pdfParse(buffer);
@@ -27,6 +28,7 @@ const extractText = async (filePath) => {
 
   throw new Error(`Unsupported file type: ${ext}`);
 };
+
 
 /**
  * Naive name/email/phone extraction from text.

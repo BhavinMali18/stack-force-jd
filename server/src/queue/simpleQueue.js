@@ -54,22 +54,31 @@ class SimpleQueue extends EventEmitter {
     const fn = this._handlers[0];
 
     const tryJob = async (attempt) => {
+      let jobDone = false;
       try {
         const result = await fn(job);
         this.emit('completed', job, result);
+        jobDone = true;
       } catch (err) {
         job.attempts++;
         if (job.attempts < this.maxRetries) {
+          // Retry after exponential back-off — do NOT decrement _active yet,
+          // the slot is still occupied by this retrying job.
           const delay = Math.pow(2, job.attempts) * 500;
           setTimeout(() => tryJob(job.attempts), delay);
-          return;
+          return; // ← exit without hitting finally decrement
         }
+        // Max retries exhausted — job truly done (failed)
         this.emit('failed', job, err);
         console.error(`[Queue:${this.name}] Job ${job.id} failed after ${job.attempts} attempts: ${err.message}`);
+        jobDone = true;
       } finally {
-        if (job.attempts >= this.maxRetries || this._active > 0) {
+        // Only release the concurrency slot when the job is fully done.
+        // On a retry path we return early above, so jobDone stays false
+        // and we skip the decrement — preventing double-counting.
+        if (jobDone) {
           this._active--;
-          this._tick(); // process next
+          this._tick(); // process next job in queue
         }
       }
     };

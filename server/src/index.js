@@ -127,7 +127,24 @@ io.on('connection', (socket) => {
 });
 
 // ── Internal endpoints: Worker → API → Browser ─────────────
-app.post('/internal/pool-job-done', express.json(), (req, res) => {
+// These endpoints are NOT authenticated via JWT (no user session),
+// but they ARE protected by a shared secret token so that only
+// co-located workers can trigger Socket.io events.
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET || (() => {
+  const s = require('crypto').randomUUID();
+  if (!IS_PRODUCTION) console.log(`🔑 [Internal] Secret: ${s} (set INTERNAL_SECRET in .env for prod)`);
+  return s;
+})();
+
+const internalAuth = (req, res, next) => {
+  const token = req.headers['x-internal-secret'];
+  if (!token || token !== INTERNAL_SECRET) {
+    return res.status(403).json({ error: 'Forbidden: invalid internal secret' });
+  }
+  next();
+};
+
+app.post('/internal/pool-job-done', express.json(), internalAuth, (req, res) => {
   const { poolResumeId, companyId, name, skillCount } = req.body;
   io.to(`company:${companyId}`).emit('pool:resume-processed', {
     poolResumeId, name, skillCount, timestamp: new Date().toISOString(),
@@ -135,7 +152,7 @@ app.post('/internal/pool-job-done', express.json(), (req, res) => {
   res.sendStatus(200);
 });
 
-app.post('/internal/job-done', express.json(), (req, res) => {
+app.post('/internal/job-done', express.json(), internalAuth, (req, res) => {
   const { candidateId, roleId, score, name } = req.body;
   if (roleId) {
     io.to(`role:${roleId}`).emit('candidate:processed', {
@@ -144,6 +161,7 @@ app.post('/internal/job-done', express.json(), (req, res) => {
   }
   res.sendStatus(200);
 });
+
 
 // ── Public Routes ──────────────────────────────────────────
 app.get('/', (req, res) => res.json({
