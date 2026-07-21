@@ -24,7 +24,7 @@ Returns a structured dict:
 import re
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict
 
 import pdfplumber
 import docx
@@ -244,6 +244,44 @@ def extract_college(text: str) -> str:
     return ""
 
 
+# ── Social Links Extraction ────────────────────────────────────
+# Fixed version of the buggy function documented in bug.md.
+# Bugs fixed:
+#   1. Crashes if text is empty or None → early guard added
+#   2. Typo "linkdin" → corrected to "linkedin"
+#   3. Wrong domain "git-hub" → corrected to "github"
+#   4. re.compile().find() does not exist → changed to .search()
+#   5. Calling .group(0) on None → made safe with conditional
+#   6. Return type was Optional[str] but returned a tuple → now returns Dict[str, str]
+
+LINKEDIN_RE = re.compile(
+    r"(?:https?://)?(?:www\.)?linkedin\.com/in/[a-zA-Z0-9\-_%]+",
+    re.IGNORECASE,
+)
+GITHUB_RE = re.compile(
+    r"(?:https?://)?(?:www\.)?github\.com/[a-zA-Z0-9\-_]+",
+    re.IGNORECASE,
+)
+
+
+def extract_social_links(text: str) -> Dict[str, str]:
+    """
+    Extracts LinkedIn and GitHub profile URLs from the resume text.
+    Returns a dictionary with 'linkedin' and 'github' keys.
+    Returns empty strings if not found.
+    """
+    if not text:                          # Bug #1 fix: guard against empty/None
+        return {"linkedin": "", "github": ""}
+
+    li_match = LINKEDIN_RE.search(text)   # Bug #3/#4 fix: .search() not .find()
+    gh_match = GITHUB_RE.search(text)     # Bug #3/#4 fix
+
+    return {
+        "linkedin": li_match.group(0) if li_match else "",  # Bug #5 fix: safe
+        "github":   gh_match.group(0) if gh_match else "",  # Bug #5 fix: safe
+    }                                     # Bug #6 fix: returns Dict, not tuple
+
+
 # ── Skills Extraction ──────────────────────────────────────────
 
 def extract_skills(text: str) -> list:
@@ -339,6 +377,7 @@ def parse_resume(file_path: str) -> dict:
     college = extract_college(text)
     current_role = extract_current_role(text)
     sections = detect_sections(text)
+    social_links = extract_social_links(text)   # Bug fix — now integrated
 
     return {
         "name": name,
@@ -353,4 +392,6 @@ def parse_resume(file_path: str) -> dict:
         "text": text,
         "sections": sections,
         "skill_count": len(skills),
+        "linkedin": social_links["linkedin"],    # ← new field
+        "github":   social_links["github"],      # ← new field
     }

@@ -64,8 +64,11 @@ async function parseResume(filePath) {
         yearsOfExperience: d.years_of_experience ?? null,
         college: d.college || '',
         sections: d.sections || {},
+        linkedin: d.linkedin || '',
+        github: d.github || '',
         parsedBy: 'python',
       };
+
     } catch (err) {
       console.warn(`⚠️  [Parser] Python parse failed for ${filePath}: ${err.message}. Falling back.`);
       pythonAvailable = false;

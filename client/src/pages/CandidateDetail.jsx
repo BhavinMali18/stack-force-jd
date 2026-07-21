@@ -102,9 +102,12 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
               </p>
               
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-                <span className="badge" style={{ background: '#E0F2FE', color: '#0369A1', fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>✨ AI Enabled</span>
-                {candidate.matchScore > 80 && (
+                <span className="badge" style={{ background: '#EDE9FE', color: '#6D28D9', fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>⚡ Rule-Based Match</span>
+                {candidate.matchScore >= 80 && (
                   <span className="badge" style={{ background: '#DCFCE7', color: '#166534', fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>Highly Recommended</span>
+                )}
+                {candidate.hasMissingMustHave && (
+                  <span className="badge" style={{ background: '#FEE2E2', color: '#991B1B', fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}>⚠ Missing Must-Haves</span>
                 )}
               </div>
               
@@ -201,50 +204,70 @@ export default function CandidateDetail({ candidateId, roleIdProp, onClose, init
                 </div>
               </div>
 
-              {/* Core Skills */}
-              {candidate.skills && candidate.skills.length > 0 && (
+              {/* Extracted Skills */}
+              {candidate.extractedSkills && candidate.extractedSkills.length > 0 && (
                 <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', marginBottom: '1rem' }}>Core Skills</h3>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', marginBottom: '1rem' }}>Extracted Skills</h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    {candidate.skills.slice(0, 8).map(skill => (
+                    {candidate.extractedSkills.slice(0, 12).map(skill => (
                       <span key={skill} style={{ background: '#EEF2FF', color: '#4F46E5', border: '1px solid #C7D2FE', borderRadius: '20px', padding: '0.3rem 0.8rem', fontSize: '0.85rem', fontWeight: 500 }}>
                         {skill}
                       </span>
                     ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Other Skills */}
-              {candidate.skills && candidate.skills.length > 8 && (
-                <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', marginBottom: '1rem' }}>Other Skills</h3>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    {candidate.skills.slice(8).map(skill => (
-                      <span key={skill} style={{ background: '#F3F4F6', color: '#4B5563', borderRadius: '20px', padding: '0.3rem 0.8rem', fontSize: '0.85rem' }}>
-                        {skill}
+                    {candidate.extractedSkills.length > 12 && (
+                      <span style={{ background: '#F3F4F6', color: '#6B7280', borderRadius: '20px', padding: '0.3rem 0.8rem', fontSize: '0.85rem' }}>
+                        +{candidate.extractedSkills.length - 12} more
                       </span>
-                    ))}
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Key Highlights (AI) */}
-              {(candidate.aiSummary || candidate.aiReasoning) && (
-                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '1.25rem' }}>
-                  <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#166534', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                    ✨ Key Highlights
-                  </h3>
-                  <ul style={{ margin: 0, paddingLeft: '1.5rem', color: '#15803D', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {candidate.aiSummary && <li>{candidate.aiSummary}</li>}
-                    {candidate.aiReasoning && <li>{candidate.aiReasoning}</li>}
-                    {candidate.hasMissingMustHave && <li style={{ color: '#DC2626' }}>Warning: Missing required must-have skills for this role.</li>}
-                  </ul>
-                  <p style={{ marginTop: '1rem', marginBottom: 0, fontSize: '0.85rem', color: '#166534', fontWeight: 600 }}>
-                    Stackforce AI infers this person is a {titleStr} with a match score of {candidate.matchScore}%.
+              {/* Skill Match Analysis — Rule-Based */}
+              <div style={{ background: '#FAFAF9', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '1.25rem' }}>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1F2937', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                  ⚡ Skill Match Analysis
+                </h3>
+
+                {/* Must-Have Skills */}
+                {(candidate.mustHaveMatched?.length > 0 || candidate.mustHaveMissing?.length > 0) && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>Must-Have Skills (60% weight)</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                      {(candidate.mustHaveMatched || []).map(s => (
+                        <span key={s} style={{ background: '#DCFCE7', color: '#166534', border: '1px solid #BBF7D0', borderRadius: '20px', padding: '0.2rem 0.7rem', fontSize: '0.8rem', fontWeight: 500 }}>✓ {s}</span>
+                      ))}
+                      {(candidate.mustHaveMissing || []).map(s => (
+                        <span key={s} style={{ background: '#FEE2E2', color: '#991B1B', border: '1px solid #FECACA', borderRadius: '20px', padding: '0.2rem 0.7rem', fontSize: '0.8rem', fontWeight: 500 }}>✗ {s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Nice-to-Have Skills */}
+                {(candidate.niceToHaveMatched?.length > 0 || candidate.niceToHaveMissing?.length > 0) && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: '0.5rem' }}>Nice-to-Have Skills (40% weight)</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                      {(candidate.niceToHaveMatched || []).map(s => (
+                        <span key={s} style={{ background: '#EDE9FE', color: '#5B21B6', border: '1px solid #DDD6FE', borderRadius: '20px', padding: '0.2rem 0.7rem', fontSize: '0.8rem' }}>✓ {s}</span>
+                      ))}
+                      {(candidate.niceToHaveMissing || []).map(s => (
+                        <span key={s} style={{ background: '#F3F4F6', color: '#6B7280', border: '1px solid #E5E7EB', borderRadius: '20px', padding: '0.2rem 0.7rem', fontSize: '0.8rem' }}>✗ {s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {candidate.hasMissingMustHave && (
+                  <p style={{ fontSize: '0.82rem', color: '#DC2626', fontWeight: 600, marginTop: '0.5rem', marginBottom: 0 }}>
+                    ⚠ Score capped at 40 — one or more must-have skills are missing from this resume.
                   </p>
-                </div>
-              )}
+                )}
+                <p style={{ marginTop: '0.75rem', marginBottom: 0, fontSize: '0.82rem', color: '#6B7280' }}>
+                  Scored by StackForce rule-based engine · Must-haves 60% · Nice-to-haves 40%
+                </p>
+              </div>
             </div>
           )}
 

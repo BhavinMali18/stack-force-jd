@@ -6,62 +6,41 @@ const Candidate = require('../models/Candidate');
 const { parseResume } = require('../services/resumeParser');
 const { computeMatchScore } = require('../services/skillMatcher');
 const { exportCSV, exportPDF } = require('../services/exportService');
-const { analyzeResumeWithAI } = require('../services/aiService');
+// ── AI scoring disabled — using rule-based pipeline only ──────
+// const { analyzeResumeWithAI } = require('../services/aiService');
 
-// Helper for background processing
+/**
+ * Helper for background processing — pure rule-based pipeline.
+ * Gemini AI scoring is disabled. Scoring uses weighted skill matcher:
+ *   Must-have skills: 60% weight | Nice-to-have: 40% weight
+ *   If any must-have is missing → score capped at 40.
+ */
 const processSingleResume = async (filePath, originalname, filename, role, companyId) => {
   try {
-    const { text, name, email, phone, extractedSkills: naiveSkills, cgpa: naiveCgpa, yearsOfExperience: naiveExp, college: naiveCollege } = await parseResume(filePath);
-    
-    let finalData = {};
-    if (process.env.GEMINI_API_KEY) {
-      try {
-        const aiData = await analyzeResumeWithAI(text, role);
-        finalData = {
-          extractedSkills: aiData.extractedSkills || [],
-          matchScore: aiData.aiScore || 0,
-          matchedSkills: aiData.matchedSkills || [],
-          missingSkills: aiData.missingSkills || [],
-          hasMissingMustHave: aiData.hasMissingMustHave || false,
-          mustHaveMatched: aiData.mustHaveMatched || [],
-          mustHaveMissing: aiData.mustHaveMissing || [],
-          niceToHaveMatched: aiData.niceToHaveMatched || [],
-          niceToHaveMissing: aiData.niceToHaveMissing || [],
-          cgpa: aiData.cgpa,
-          yearsOfExperience: aiData.yearsOfExperience,
-          college: aiData.college || '',
-          aiScore: aiData.aiScore,
-          aiSummary: aiData.aiSummary,
-          aiReasoning: aiData.aiReasoning,
-        };
-      } catch (aiErr) {
-        console.warn(`AI Analysis failed for ${originalname}, falling back to rule-based. Error:`, aiErr.message);
-        finalData = null; 
-      }
-    }
+    const {
+      text,
+      name,
+      email,
+      phone,
+      extractedSkills,
+      cgpa,
+      yearsOfExperience,
+      college,
+      linkedin = '',
+      github = '',
+    } = await parseResume(filePath);
 
-    if (!finalData) {
-      const rules = computeMatchScore(naiveSkills, role.requiredSkills, role.weightedSkills);
-      finalData = {
-        extractedSkills: naiveSkills,
-        matchScore: rules.score,
-        matchedSkills: rules.matchedSkills,
-        missingSkills: rules.missingSkills,
-        hasMissingMustHave: rules.hasMissingMustHave,
-        mustHaveMatched: rules.mustHaveMatched,
-        mustHaveMissing: rules.mustHaveMissing,
-        niceToHaveMatched: rules.niceToHaveMatched,
-        niceToHaveMissing: rules.niceToHaveMissing,
-        cgpa: naiveCgpa,
-        yearsOfExperience: naiveExp,
-        college: naiveCollege,
-      };
-    }
+    // ── Rule-based scoring ───────────────────────────────────
+    // AI scoring (analyzeResumeWithAI) is commented out.
+    // computeMatchScore handles all skill matching + weighting.
+    const requiredSkills = role ? (role.requiredSkills || []) : [];
+    const weightedSkills = role ? (role.weightedSkills || []) : [];
+    const result = computeMatchScore(extractedSkills, requiredSkills, weightedSkills);
 
+    // ── Persist ──────────────────────────────────────────────
     const resumeUrl = `/uploads/resumes/${filename}`;
-
     await Candidate.create({
-      role: role._id,
+      role: role ? role._id : undefined,
       company: companyId,
       name: name || 'Unknown',
       email,
@@ -69,8 +48,23 @@ const processSingleResume = async (filePath, originalname, filename, role, compa
       resumeUrl,
       resumeFilename: originalname,
       resumeText: text,
-      ...finalData,
+      extractedSkills,
+      matchScore: result.score,
+      matchedSkills: result.matchedSkills,
+      missingSkills: result.missingSkills,
+      hasMissingMustHave: result.hasMissingMustHave,
+      mustHaveMatched: result.mustHaveMatched,
+      mustHaveMissing: result.mustHaveMissing,
+      niceToHaveMatched: result.niceToHaveMatched,
+      niceToHaveMissing: result.niceToHaveMissing,
+      cgpa,
+      yearsOfExperience,
+      college,
+      linkedinUrl: linkedin,
+      githubUrl: github,
+      // aiScore, aiSummary, aiReasoning left as null (AI disabled)
     });
+
     return true;
   } catch (err) {
     console.error(`Error processing ${originalname}: ${err.message}`);
