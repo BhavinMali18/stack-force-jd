@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Trash2, Bell, Loader, X, Upload } from 'lucide-react';
-import { candidatesAPI } from '../api/index.js';
+import { candidatesAPI, rolesAPI } from '../api/index.js';
 import CandidateDetail from './CandidateDetail.jsx';
 import UploadModal from '../components/UploadModal.jsx';
 
@@ -13,6 +13,12 @@ export default function Explore() {
   const [updating, setUpdating] = useState(false);
   const [viewingCandidateId, setViewingCandidateId] = useState(null);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
+  // ── Reject Modal state ─────────────────────────────────────
+  const [rejectModal, setRejectModal] = useState(false);
+  const [rejectScope, setRejectScope] = useState('global'); // 'global' | roleId
+  const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
 
   // Fetch Company Candidates
   useEffect(() => {
@@ -56,26 +62,50 @@ export default function Explore() {
       setSearchKeyword(keyword);
     }
   };
-  
-  const handleRejectSelected = async () => {
+
+  const openRejectModal = () => {
     if (selectedIds.length === 0) return;
-    if (!confirm(`Reject ${selectedIds.length} candidate(s)?`)) return;
-    
+    setRejectModal(true);
+    setRejectScope('global');
+    if (roles.length === 0) {
+      setRolesLoading(true);
+      rolesAPI.list()
+        .then(res => setRoles(res.data.roles || []))
+        .catch(() => {})
+        .finally(() => setRolesLoading(false));
+    }
+  };
+
+  const handleRejectSelected = async () => {
+    setRejectModal(false);
+
+    // Determine which candidate IDs to reject based on scope
+    let idsToReject = selectedIds;
+    if (rejectScope !== 'global') {
+      // Only reject candidates belonging to the selected role
+      idsToReject = selectedIds.filter(id => {
+        const c = candidates.find(c => c._id === id);
+        const roleId = c?.role?._id || c?.role;
+        return String(roleId) === String(rejectScope);
+      });
+      if (idsToReject.length === 0) {
+        alert('None of the selected candidates belong to that project.');
+        return;
+      }
+    }
+
     setUpdating(true);
     try {
-      await Promise.all(selectedIds.map(id => candidatesAPI.updateStatus(id, { status: 'Rejected' })));
-      // Update local state
-      setCandidates(prev => prev.map(c => selectedIds.includes(c._id) ? { ...c, status: 'Rejected' } : c));
+      await Promise.all(idsToReject.map(id => candidatesAPI.updateStatus(id, { status: 'Rejected' })));
+      setCandidates(prev =>
+        prev.map(c => idsToReject.includes(c._id) ? { ...c, status: 'Rejected' } : c)
+      );
       setSelectedIds([]);
     } catch (err) {
       alert("Failed to reject some candidates");
     } finally {
       setUpdating(false);
     }
-  };
-
-  const handleBulkUpload = async (e) => {
-    // Legacy file input handler removed in favor of UploadModal
   };
 
   return (
@@ -87,6 +117,101 @@ export default function Explore() {
           candidatesAPI.getAll().then(res => setCandidates(res.data.candidates || []));
         }} 
       />
+
+      {/* ── Reject-From-Project Modal ───────────────────────── */}
+      {rejectModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 2000,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '16px',
+            width: '100%', maxWidth: '480px', padding: '2rem',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+            maxHeight: '80vh', overflowY: 'auto',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827' }}>
+                Reject {selectedIds.length} candidate{selectedIds.length > 1 ? 's' : ''}
+              </h2>
+              <button onClick={() => setRejectModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.875rem', color: '#6B7280', marginBottom: '1.25rem' }}>
+              Reject from which project?
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.5rem' }}>
+              {/* Global option */}
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: '0.75rem',
+                padding: '0.875rem 1rem', borderRadius: '10px', cursor: 'pointer',
+                border: `2px solid ${rejectScope === 'global' ? '#4F46E5' : '#E5E7EB'}`,
+                background: rejectScope === 'global' ? '#EEF2FF' : '#fff',
+                transition: 'all 0.15s',
+              }}>
+                <input
+                  type="radio" name="rejectScope" value="global"
+                  checked={rejectScope === 'global'}
+                  onChange={() => setRejectScope('global')}
+                  style={{ accentColor: '#4F46E5' }}
+                />
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#111827' }}>All Projects (Global)</div>
+                  <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>Reject across the entire dataset</div>
+                </div>
+              </label>
+
+              {/* Per-role options */}
+              {rolesLoading ? (
+                <div style={{ padding: '1rem', textAlign: 'center', color: '#9CA3AF', fontSize: '0.85rem' }}>
+                  <Loader size={16} style={{ display: 'inline', marginRight: '0.4rem' }} />
+                  Loading projects...
+                </div>
+              ) : roles.map(role => (
+                <label key={role._id} style={{
+                  display: 'flex', alignItems: 'center', gap: '0.75rem',
+                  padding: '0.875rem 1rem', borderRadius: '10px', cursor: 'pointer',
+                  border: `2px solid ${rejectScope === role._id ? '#4F46E5' : '#E5E7EB'}`,
+                  background: rejectScope === role._id ? '#EEF2FF' : '#fff',
+                  transition: 'all 0.15s',
+                }}>
+                  <input
+                    type="radio" name="rejectScope" value={role._id}
+                    checked={rejectScope === role._id}
+                    onChange={() => setRejectScope(role._id)}
+                    style={{ accentColor: '#4F46E5' }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#111827' }}>{role.title}</div>
+                    <div style={{ fontSize: '0.78rem', color: '#6B7280' }}>{role.candidateCount || 0} candidates · {role.location}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setRejectModal(false)}
+                style={{ padding: '0.6rem 1.25rem', borderRadius: '8px', border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontWeight: 500, color: '#374151' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectSelected}
+                disabled={updating}
+                style={{ padding: '0.6rem 1.25rem', borderRadius: '8px', border: 'none', background: '#EF4444', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
+              >
+                {updating ? 'Rejecting...' : `Reject ${selectedIds.length}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="main-header" style={{ padding: '0 2.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <h1 style={{ fontSize: '1.25rem' }}>Global Dataset ({displayCandidates.length})</h1>
@@ -120,7 +245,7 @@ export default function Explore() {
               value={keyword}
               onChange={(e) => {
                 setKeyword(e.target.value);
-                if (e.target.value === '') setSearchKeyword(''); // auto-clear
+                if (e.target.value === '') setSearchKeyword('');
               }}
               onKeyDown={handleSearch}
             />
@@ -131,7 +256,7 @@ export default function Explore() {
               <button 
                 className="btn btn-danger" 
                 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#EF4444', color: '#fff', border: 'none' }}
-                onClick={handleRejectSelected}
+                onClick={openRejectModal}
                 disabled={updating}
               >
                 <Trash2 size={16} /> Reject Selected ({selectedIds.length})
@@ -176,14 +301,21 @@ export default function Explore() {
                   </td>
                 </tr>
               ) : displayCandidates.map(candidate => {
-                  const nameStr = candidate.name || 'Unknown Candidate';
+                  // Bug fix: hide "Unknown" / "Unknown Candidate" — fall back to filename
+                  const nameStr = (!candidate.name || candidate.name === 'Unknown' || candidate.name === 'Unknown Candidate')
+                    ? (candidate.resumeFilename?.replace(/\.[^/.]+$/, '') || '—')
+                    : candidate.name;
+
                   const avatarUrl = candidate.avatar || `https://i.pravatar.cc/150?u=${candidate._id}`;
-                  // candidate.company is a MongoDB ObjectId ref — never display raw.
-                  // Show the role title as the "company context" if available.
                   const companyStr = (candidate.role && typeof candidate.role === 'object' && candidate.role.title)
                     ? candidate.role.title
                     : '';
                   
+                  // Bug fix: hide "Unknown Role" fallback — show the project role title instead
+                  const currentRoleStr = (!candidate.currentRole || candidate.currentRole === 'Unknown Role')
+                    ? companyStr
+                    : candidate.currentRole;
+
                   let expStr = '-';
                   if (candidate.yearsOfExperience != null) {
                     expStr = `${candidate.yearsOfExperience} yrs`;
@@ -212,8 +344,8 @@ export default function Explore() {
                         </div>
                       </td>
                       <td style={{ padding: '1rem 1.5rem' }}>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>{candidate.currentRole || candidate.title || '—'}</div>
-                        {companyStr && <div style={{ fontSize: '0.8rem', color: '#6B7280' }}>{companyStr}</div>}
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#111827' }}>{currentRoleStr || '—'}</div>
+                        {companyStr && currentRoleStr !== companyStr && <div style={{ fontSize: '0.8rem', color: '#6B7280' }}>{companyStr}</div>}
                       </td>
                       <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: '#4B5563' }}>
                         {expStr}
@@ -225,8 +357,12 @@ export default function Explore() {
                       <td style={{ padding: '1rem 1.5rem' }}>
                         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                            {candidate.status ? (
-                             <span style={{ background: '#E0F2FE', color: '#0284C7', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600 }}>
-                               {candidate.status === 'Applied' ? '✨ New Applicant' : `✨ ${candidate.status}`}
+                             <span style={{
+                               background: candidate.status === 'Rejected' ? '#FEE2E2' : '#E0F2FE',
+                               color: candidate.status === 'Rejected' ? '#DC2626' : '#0284C7',
+                               padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600
+                             }}>
+                               {candidate.status === 'Applied' ? '✨ New Applicant' : candidate.status === 'Rejected' ? '🚫 Rejected' : `✨ ${candidate.status}`}
                              </span>
                            ) : '-'}
                         </div>

@@ -3,6 +3,7 @@ const path = require('path');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const { SKILL_DICTIONARY } = require('./skillDictionary');
+const { normalizeSkills } = require('./openSkillsApi');
 
 /**
  * Extract raw text from a resume file (PDF or DOCX).
@@ -180,7 +181,8 @@ const extractSkillsFromText = (text) => {
 const parseResume = async (filePath) => {
   const text = await extractText(filePath);
   const { name, email, phone } = extractMeta(text);
-  const extractedSkills = extractSkillsFromText(text);
+  const rawSkills = extractSkillsFromText(text);
+  const extractedSkills = await normalizeSkills(rawSkills);
   const cgpa = extractCGPA(text);
   const yearsOfExperience = extractExperience(text);
   const college = extractCollege(text);

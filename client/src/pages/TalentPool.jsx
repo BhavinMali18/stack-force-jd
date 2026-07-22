@@ -7,14 +7,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { useUploadQueue } from '../hooks/useUploadQueue.js';
-import axios from 'axios';
+import api from '../api/index.js';  // ← shared axios instance with withCredentials:true (HttpOnly cookie auth)
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const token = () => localStorage.getItem('sf_token');
-const authHeaders = () => ({ Authorization: `Bearer ${token()}` });
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // Pool-specific upload hook (presigns to /api/pool/presign)
+// Uses the shared `api` instance so HttpOnly cookies are sent automatically.
 function usePoolUpload(companyId) {
   const [total, setTotal] = useState(0);
   const [uploaded, setUploaded] = useState(0);
@@ -25,7 +23,7 @@ function usePoolUpload(companyId) {
 
   useEffect(() => {
     if (!companyId) return;
-    const socket = io(API, { transports: ['websocket'] });
+    const socket = io(API_BASE, { transports: ['websocket'] });
     socket.on('connect', () => socket.emit('join-company', companyId));
     socket.on('pool:resume-processed', (data) => {
       setProcessed((n) => n + 1);
@@ -38,9 +36,8 @@ function usePoolUpload(companyId) {
     setTotal(files.length); setUploaded(0); setProcessed(0);
     setIsUploading(true); setError(null); setLiveNames([]);
     try {
-      const { data } = await axios.post(`${API}/api/pool/presign`,
-        { files: files.map(f => ({ name: f.name, size: f.size })) },
-        { headers: authHeaders() });
+      const { data } = await api.post('/pool/presign',
+        { files: files.map(f => ({ name: f.name, size: f.size })) });
 
       const BATCH = 5;
       for (let i = 0; i < data.tokens.length; i += BATCH) {
@@ -50,19 +47,20 @@ function usePoolUpload(companyId) {
           const { uploadUrl, confirmUrl, r2Key, filename, direct } = tokenObj;
           try {
             if (direct) {
-              // Production: PUT raw file directly to R2 presigned URL (no auth header!)
-              await axios.put(uploadUrl, file, {
+              // Production: PUT raw file directly to R2 presigned URL
+              // This goes to R2 directly — use a plain fetch (no credentials needed for R2)
+              await fetch(uploadUrl, {
+                method: 'PUT',
                 headers: { 'Content-Type': 'application/octet-stream' },
+                body: file,
               });
-              // Then notify our server that the file is in R2
-              await axios.post(confirmUrl || `${API}/api/pool/confirm`,
-                { r2Key, filename },
-                { headers: authHeaders() });
+              // Then notify our server (uses cookie auth via shared api instance)
+              await api.post('/pool/confirm', { r2Key, filename });
             } else {
-              // Dev: send file through our server
+              // Dev: send file through our server (cookie auth via shared api instance)
               const form = new FormData();
               form.append('file', file);
-              await axios.put(`${API}${uploadUrl}`, form, { headers: authHeaders() });
+              await api.put(uploadUrl, form);
             }
             setUploaded(n => n + 1);
           } catch { /* individual failures are non-fatal */ }
@@ -92,22 +90,22 @@ export default function TalentPool() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const companyId = JSON.parse(atob(localStorage.getItem('sf_token')?.split('.')[1] || 'e30='))?.id;
+  // Extract companyId from the auth context (stored in localStorage as sf_company by the login flow)
+  const companyId = JSON.parse(localStorage.getItem('sf_company') || '{}')?.id;
 
   const { startUpload, reset, total, uploaded, processed, isUploading, liveNames, error, progress, isDone } = usePoolUpload(companyId);
 
   const fetchStats = async () => {
     try {
-      const { data } = await axios.get(`${API}/api/pool/stats`, { headers: authHeaders() });
+      const { data } = await api.get('/pool/stats');
       setStats(data);
     } catch {}
   };
 
   const fetchResumes = async (p = 1, s = '') => {
     try {
-      const { data } = await axios.get(`${API}/api/pool`, {
+      const { data } = await api.get('/pool', {
         params: { page: p, limit: 30, search: s, status: 'done' },
-        headers: authHeaders(),
       });
       setResumes(data.resumes);
       setTotalPages(data.pages);
@@ -133,7 +131,7 @@ export default function TalentPool() {
 
   const handleDelete = async (id) => {
     if (!confirm('Remove from pool?')) return;
-    await axios.delete(`${API}/api/pool/${id}`, { headers: authHeaders() });
+    await api.delete(`/pool/${id}`);
     fetchResumes(page, search); fetchStats();
   };
 

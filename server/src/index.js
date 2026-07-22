@@ -20,6 +20,7 @@ const emailRoutes = require('./routes/email.routes');
 const storageRoutes = require('./routes/storage.routes');
 const queueRoutes = require('./routes/queue.routes');
 const poolRoutes = require('./routes/pool.routes');
+const skillsRoutes = require('./routes/skills.routes');
 const { errorHandler } = require('./middleware/error.middleware');
 const { startPoolWorker } = require('./workers/poolWorkerInline');
 const { startResumeWorker } = require('./workers/resumeWorkerInline');
@@ -186,6 +187,7 @@ app.use('/api/storage', storageRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api/pool', poolRoutes);
 app.use('/api', poolRoutes); // /api/roles/:id/suggestions + suggest-add
+app.use('/api/skills', skillsRoutes);
 
 // ── Error Handler ──────────────────────────────────────────
 app.use(errorHandler);
