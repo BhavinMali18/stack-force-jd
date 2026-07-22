@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const features = [
-  { icon: '🚀', title: 'Instant Ranked Shortlist', desc: 'Upload 50,000+ resumes. Get a ranked shortlist with match % in minutes, not days.' },
-  { icon: '🧠', title: 'AI-Powered Scoring', desc: 'Advanced semantic AI matching with Gemini 2.5 Flash for deep skill and contextual analysis.' },
-  { icon: '📊', title: 'Weighted Skill Rules', desc: 'Configure Must-Haves and Nice-to-Haves. Precise control over what matters most.' },
-  { icon: '📤', title: 'Bulk Resume Upload', desc: 'Drag-drop up to 100 PDFs/DOCXs at once. Auto-parsed and scored instantly.' },
-  { icon: '🔗', title: 'LinkedIn Enrichment', desc: 'Automatically pull in candidate LinkedIn profiles, work history, and verified skills.' },
-  { icon: '📥', title: 'Export Shortlists', desc: 'Download ranked shortlists as CSV or branded PDF reports in seconds.' },
+  { title: 'Instant Ranked Shortlist', desc: 'Upload 50,000+ resumes. Get a ranked shortlist with match % in minutes, not days.' },
+  { title: 'AI-Powered Scoring', desc: 'Advanced semantic AI matching with Gemini 2.5 Flash for deep skill and contextual analysis.' },
+  { title: 'Weighted Skill Rules', desc: 'Configure Must-Haves and Nice-to-Haves. Precise control over what matters most.' },
+  { title: 'Bulk Resume Upload', desc: 'Drag-drop up to 100 PDFs/DOCXs at once. Auto-parsed and scored instantly.' },
+  { title: 'LinkedIn Enrichment', desc: 'Automatically pull in candidate LinkedIn profiles, work history, and verified skills.' },
+  { title: 'Export Shortlists', desc: 'Download ranked shortlists as CSV or branded PDF reports in seconds.' },
 ];
 
 const stats = [
@@ -59,7 +59,7 @@ export default function Landing() {
             fontWeight: 600, color: '#94a3b8', marginBottom: '2rem',
             boxShadow: '0 4px 20px rgba(0,0,0,0.2)', backdropFilter: 'blur(10px)'
           }}>
-            <span style={{ color: '#38bdf8' }}>✨</span> Phase 4 Now Live: AI Scoring & LinkedIn Enrichment
+            <span style={{ color: '#38bdf8', fontSize: '0.7rem' }}>●</span> Phase 4 Now Live: AI Scoring & LinkedIn Enrichment
           </div>
           
           <h1 style={{ 
@@ -177,9 +177,10 @@ export default function Landing() {
                 width: 54, height: 54, borderRadius: '14px',
                 background: 'linear-gradient(135deg, rgba(56,189,248,0.1) 0%, rgba(129,140,248,0.1) 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '1.8rem', marginBottom: '1.5rem', border: '1px solid rgba(129,140,248,0.2)'
+                fontSize: '1.8rem', marginBottom: '1.5rem', border: '1px solid rgba(129,140,248,0.2)',
+                color: '#818cf8', fontWeight: 700
               }}>
-                {f.icon}
+                {String(i + 1).padStart(2, '0')}
               </div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.75rem', color: '#fff' }}>{f.title}</h3>
               <p style={{ fontSize: '0.95rem', color: '#94a3b8', lineHeight: 1.6 }}>{f.desc}</p>

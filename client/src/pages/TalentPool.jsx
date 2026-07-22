@@ -143,7 +143,6 @@ export default function TalentPool() {
         {/* Header */}
         <div style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '2rem' }}>🗄️</span>
             <h1 style={{ fontSize: '2rem' }}>Talent Pool</h1>
           </div>
           <p style={{ color: 'var(--text-muted)', maxWidth: 600 }}>
@@ -156,13 +155,12 @@ export default function TalentPool() {
         {stats && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '2rem' }}>
             {[
-              { label: 'Total Resumes', value: stats.total, icon: '📄', color: 'var(--accent-light)' },
-              { label: 'Parsed & Ready', value: stats.done, icon: '✅', color: 'var(--success)' },
-              { label: 'In Queue', value: stats.queued + stats.processing, icon: '⚙️', color: 'var(--warning)' },
-              { label: 'Failed', value: stats.failed, icon: '❌', color: stats.failed > 0 ? 'var(--danger)' : 'var(--text-muted)' },
+              { label: 'Total Resumes', value: stats.total, color: 'var(--accent-light)' },
+              { label: 'Parsed & Ready', value: stats.done, color: 'var(--success)' },
+              { label: 'In Queue', value: stats.queued + stats.processing, color: 'var(--warning)' },
+              { label: 'Failed', value: stats.failed, color: stats.failed > 0 ? 'var(--danger)' : 'var(--text-muted)' },
             ].map(s => (
               <div key={s.label} className="card" style={{ padding: '1rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{s.icon}</div>
                 <p style={{ fontSize: '1.6rem', fontWeight: 800, color: s.color }}>{s.value}</p>
                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{s.label}</p>
               </div>
@@ -173,7 +171,7 @@ export default function TalentPool() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
           {/* Upload Panel */}
           <div className="card" style={{ padding: '1.5rem' }}>
-            <h3 style={{ marginBottom: '0.5rem' }}>📤 Upload Resumes</h3>
+            <h3 style={{ marginBottom: '0.5rem' }}>Upload Resumes</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
               Drop up to 5,000 resumes. Files upload in parallel batches — parsed async by Python parser.
             </p>
@@ -188,7 +186,6 @@ export default function TalentPool() {
                   transition: 'border-color 0.2s',
                 }}
               >
-                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>☁️</div>
                 <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Drag & drop resumes</p>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>PDF, DOCX, TXT — up to 5,000 files</p>
                 <label style={{ display: 'inline-block', marginTop: '0.75rem', cursor: 'pointer' }}>
@@ -208,10 +205,10 @@ export default function TalentPool() {
                   <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{files.length} files ready</p>
                   <button className="btn btn-ghost btn-sm" onClick={() => setFiles([])}>Clear</button>
                 </div>
-                {error && <p style={{ color: 'var(--danger)', fontSize: '0.82rem', marginBottom: '0.75rem' }}>❌ {error}</p>}
+                {error && <p style={{ color: 'var(--danger)', fontSize: '0.82rem', marginBottom: '0.75rem' }}>{error}</p>}
                 <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}
                   onClick={() => startUpload(files)}>
-                  ⚡ Upload {files.length} to Talent Pool
+                  Upload {files.length} to Talent Pool
                 </button>
               </div>
             )}
@@ -221,7 +218,7 @@ export default function TalentPool() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                   <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                    {isUploading ? '📤 Uploading...' : '🐍 Python parser running...'}
+                    {isUploading ? 'Uploading...' : 'Parsing...'}
                   </span>
                   <span style={{ fontWeight: 700, color: 'var(--accent-light)' }}>{progress}%</span>
                 </div>
@@ -245,7 +242,6 @@ export default function TalentPool() {
 
             {isDone && (
               <div style={{ textAlign: 'center', padding: '1rem' }}>
-                <div style={{ fontSize: '2.5rem' }}>🎉</div>
                 <p style={{ fontWeight: 700, color: 'var(--success)', marginTop: '0.5rem' }}>{processed} resumes added to pool!</p>
                 <button className="btn btn-secondary btn-sm" style={{ marginTop: '0.75rem' }} onClick={() => { setFiles([]); reset(); }}>Upload More</button>
               </div>
@@ -275,7 +271,7 @@ export default function TalentPool() {
         {stats?.done > 0 && (
           <div className="card" style={{ marginTop: '1.5rem', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3>📋 Pool Resumes ({stats.done} parsed)</h3>
+              <h3>Pool Resumes ({stats.done} parsed)</h3>
               <input className="form-input" placeholder="Search by name, college..." value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }} style={{ maxWidth: 260 }} />
             </div>

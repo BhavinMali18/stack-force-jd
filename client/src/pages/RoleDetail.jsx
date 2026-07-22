@@ -122,24 +122,24 @@ export default function RoleDetail() {
           <div>
             <h1 style={{ fontSize: '1.75rem' }}>{role?.title}</h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-              📍 {role?.location} · {role?.experienceLevel} · {candidates.length} candidates
+              {role?.location} · {role?.experienceLevel} · {candidates.length} candidates
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             <Link to={`/roles/${id}/analytics`} className="btn btn-secondary btn-sm" style={{ color: 'var(--accent-light)', borderColor: 'var(--accent-light)' }}>
-              📊 Analytics
+              Analytics
             </Link>
             <Link to={`/roles/${id}/edit`} className="btn btn-secondary btn-sm" style={{ background: '#fff' }}>
-              ✏️ Edit
+              Edit
             </Link>
             <button className="btn btn-primary btn-sm" style={{ background: '#4F46E5', color: '#fff', border: 'none' }} onClick={() => setUploadModalOpen(true)}>
-              ⬆ Bulk Upload
+              Bulk Upload
             </button>
             <button className="btn btn-secondary btn-sm" onClick={() => handleExport('csv')} disabled={exporting || !candidates.length}>
-              {exporting ? '...' : '⬇ CSV'}
+              {exporting ? '...' : 'CSV'}
             </button>
             <button className="btn btn-secondary btn-sm" onClick={() => handleExport('pdf')} disabled={exporting || !candidates.length}>
-              {exporting ? '...' : '⬇ PDF'}
+              {exporting ? '...' : 'PDF'}
             </button>
           </div>
         </div>
@@ -191,7 +191,7 @@ export default function RoleDetail() {
               style={{ width: 16, height: 16, accentColor: 'var(--success)' }}
             />
             <label htmlFor="must-have-only" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-              Must-haves only 🔴
+              Must-haves only
             </label>
           </div>
         </div>
@@ -202,10 +202,10 @@ export default function RoleDetail() {
         {/* Candidates Table */}
         {candidates.length === 0 ? (
           <div className="empty-state card" style={{ background: '#fff', borderRadius: '12px' }}>
-            <span className="empty-state-icon">👥</span>
+            <span className="empty-state-icon"></span>
             <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>No candidates match</p>
             <p style={{ fontSize: '0.875rem' }}>Upload resumes to start building your shortlist.</p>
-            <button onClick={() => setUploadModalOpen(true)} className="btn btn-primary">⬆ Bulk Upload</button>
+            <button onClick={() => setUploadModalOpen(true)} className="btn btn-primary">Bulk Upload</button>
           </div>
         ) : (
           <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #E5E7EB', overflow: 'hidden' }}>

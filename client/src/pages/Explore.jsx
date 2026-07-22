@@ -362,7 +362,7 @@ export default function Explore() {
                                color: candidate.status === 'Rejected' ? '#DC2626' : '#0284C7',
                                padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600
                              }}>
-                               {candidate.status === 'Applied' ? '✨ New Applicant' : candidate.status === 'Rejected' ? '🚫 Rejected' : `✨ ${candidate.status}`}
+                               {candidate.status === 'Applied' ? 'New Applicant' : candidate.status === 'Rejected' ? 'Rejected' : candidate.status}
                              </span>
                            ) : '-'}
                         </div>

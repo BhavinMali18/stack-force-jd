@@ -79,7 +79,7 @@ export default function RoleCreate() {
                       description: parsedData.description || prev.description,
                       weightedSkills: (Array.isArray(parsedData.weightedSkills) && parsedData.weightedSkills.length > 0) ? parsedData.weightedSkills : prev.weightedSkills
                     }));
-                    alert('✨ Auto-filled project details from Job Description!');
+                    alert('Auto-filled project details from Job Description!');
                   } catch (err) {
                     console.error(err);
                     setError(err.response?.data?.message || 'Failed to parse Job Description. Please try again.');
@@ -95,7 +95,7 @@ export default function RoleCreate() {
               style={{ border: '1px solid #C7D2FE', color: '#4F46E5', background: '#EEF2FF', fontWeight: 600 }}
               onClick={() => document.getElementById('jd-upload').click()}
             >
-              ✨ Auto-fill from JD
+              Auto-fill from JD
             </button>
           </div>
         </div>
@@ -157,7 +157,7 @@ export default function RoleCreate() {
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
               <Link to="/dashboard" className="btn btn-secondary">Cancel</Link>
               <button type="submit" className="btn btn-primary" disabled={loading} id="submit-role">
-                {loading ? <><span className="spinner" style={{ width: 16, height: 16 }} /> Creating...</> : '✓ Post Role & Upload Resumes →'}
+                {loading ? <><span className="spinner" style={{ width: 16, height: 16 }} /> Creating...</> : 'Post Role & Upload Resumes'}
               </button>
             </div>
           </div>
